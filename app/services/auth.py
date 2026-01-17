@@ -122,7 +122,7 @@ async def register(user_in):
     return user
 
 # 自动识别 Cookie/Header，查 session 表，注入 user
-def get_current_user_from_context(request: Request, db: Session = Depends(get_db)):
+def get_current_user(request: Request, db: Session = Depends(get_db)):
     session_id = None
     # 优先 Cookie
     if settings.SESSION_COOKIE_NAME in request.cookies:

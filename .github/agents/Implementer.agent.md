@@ -3,7 +3,7 @@ name: Implementer
 description: 执行 Planner 生成的计划，按 Phase 分阶段实施并验证变更。
 argument-hint: 计划文档路径与 Phase (示例: "plans/feature.md, Phase 1")
 tools:
-  ['read', 'edit', 'search', 'todo']
+  ['read', 'edit', 'search', 'web', 'todo']
 model: GPT-4.1 (copilot)
 infer: false
 handoffs:

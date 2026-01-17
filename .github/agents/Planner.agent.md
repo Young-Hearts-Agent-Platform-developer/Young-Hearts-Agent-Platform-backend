@@ -3,7 +3,7 @@ name: Planner
 description: 技术方案设计专家 — 基于研究报告支持生成新计划或更新现有计划（含版本记录），指导 Implementer 执行。
 argument-hint: 必需 "研究报告路径"。若为 "更新模式"，请确保已打开或引用现有的计划文件。
 tools:
-  ['read', 'edit', 'search', 'todo']
+  ['read', 'edit', 'search', 'web', 'todo']
 infer: false
 handoffs:
   - label: 进入执行阶段 (Implementer)

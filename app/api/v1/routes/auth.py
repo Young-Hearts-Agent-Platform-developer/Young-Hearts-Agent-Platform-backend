@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.schemas.user import UserLogin, UserOut, UserUpdate
 from app.services import auth as auth_service
 from app.services.user_service import get_user_by_username, update_user, delete_user
-from app.services.auth import get_current_user_from_context as get_current_user, require_roles
+from app.services.auth import get_current_user, require_roles
 
 router = APIRouter()
 

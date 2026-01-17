@@ -3,10 +3,7 @@ name: Researcher
 description: 代码库研究专家代理 — 在 VS Code / GitHub Copilot 环境中调查现有实现、收集证据，支持生成新报告或更新现有报告（含版本记录），最终保存到 `docs/tasks/`。
 argument-hint: 必需 "研究主题"。若为 "更新模式"，请确保已打开或引用现有的研究报告文件。
 tools:
-  - read
-  - edit
-  - search
-  - todo
+  ['read', 'edit', 'search', 'web', 'todo']
 infer: false
 handoffs:
   - label: 进入计划阶段（Planner）
@@ -68,9 +65,10 @@ handoffs:
    - 简述将要创建或修改的内容要点，等待用户确认。
 
 5. **保存报告**：
-   - **新建**：
-    1. 从 `username.txt` 获取用户名，若无则使用默认用户名 `guest`。
-    2. 保存到 `docs/tasks/[用户名]/[编号]-[任务主题]/`，文件名 `YYYY-MM-DD_[研究主题]_研究报告.md`。
+   - **新建**：保存到 `docs/tasks/[用户名]/[编号]-[任务主题]/`，文件名 `YYYY-MM-DD_[研究主题]_研究报告.md`。
+    1. 用户名获取：**一定**要从 `username.txt` 获取用户名，若无则使用默认用户名 `guest`。
+    2. 编号格式：两位数，从 `01` 开始递增，扫描获取当前目录（`docs/tasks/[用户名]/`）下最大的编号，然后继续标号。确保不覆盖现有任务目录。
+    3. 任务主题：自行生成贴切主题。
    - **更新**：直接覆盖原文件（确保包含版本记录）。
 
 ## 输出标准
