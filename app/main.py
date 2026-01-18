@@ -1,3 +1,6 @@
+
+
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,11 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import init_db
 from app.utils_openapi import generate_openapi_json
-
-# 注册所有模型，确保 Base.metadata 包含知识库相关表
+# --- 注册所有模型，确保 Base.metadata 包含知识库相关表 ---
 from app.models.user import User
 from app.models.knowledge import KnowledgeItem, KnowledgeChunk
-
 # include routers
 from app.api.v1.routes import auth as auth_router
 try:
@@ -45,7 +46,6 @@ app.add_middleware(
 app.include_router(auth_router.router, prefix="/api/auth", tags=["auth"])
 if knowledge_router is not None:
     app.include_router(knowledge_router.router, prefix="/api", tags=["knowledge"])
-
 
 @app.get("/health")
 def health():

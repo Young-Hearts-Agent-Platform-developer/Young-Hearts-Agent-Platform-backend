@@ -93,7 +93,6 @@ class UserOut(UserBase):
 
     class Config:
         from_attributes = True
-
     @field_validator("roles", mode="before")
     @classmethod
     def parse_roles(cls, v):
