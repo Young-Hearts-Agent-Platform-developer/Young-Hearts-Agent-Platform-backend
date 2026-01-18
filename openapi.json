@@ -179,6 +179,45 @@
         }
       }
     },
+    "/api/consult/chat": {
+      "post": {
+        "tags": [
+          "consult"
+        ],
+        "summary": "Consult Chat",
+        "operationId": "consult_chat_api_consult_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -198,6 +237,35 @@
   },
   "components": {
     "schemas": {
+      "ChatRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "reasoning_effort": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Effort"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "role"
+        ],
+        "title": "ChatRequest"
+      },
       "ExpertProfileCreate": {
         "properties": {
           "full_name": {

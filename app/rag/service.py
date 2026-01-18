@@ -1,4 +1,5 @@
 import os
+from app.core.config import settings
 import json
 import openai
 from typing import AsyncGenerator, Optional
@@ -8,7 +9,7 @@ from pydantic import SecretStr
 
 PROMPT_DIR = os.path.join(os.path.dirname(__file__), 'prompts')
 
-ARK_API_KEY = os.getenv('ARK_API_KEY')
+ARK_API_KEY = settings.ark_api_key
 if not ARK_API_KEY:
     raise RuntimeError('ARK_API_KEY 环境变量未设置')
 

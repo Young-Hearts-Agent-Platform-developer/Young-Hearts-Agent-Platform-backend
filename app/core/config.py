@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SECURE: bool = False
     SESSION_EXPIRE_MINUTES: int = 60 * 24  # 默认 24 小时
 
+    # ark api key
+    ark_api_key: str | None = None
+
     class Config:
         env_file = ".env"
 
