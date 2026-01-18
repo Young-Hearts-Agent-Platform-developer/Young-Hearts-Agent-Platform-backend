@@ -8,6 +8,7 @@ from app.schemas.consultation import ConsultationSessionCreate, ConsultationSess
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, AsyncGenerator, List, Any
+import json
 
 router = APIRouter()
 
@@ -72,8 +73,10 @@ async def consult_chat(
     current_user=Depends(get_current_user),
     service: ConsultationService = Depends(get_consult_service)
 ):
+    
     async def event_stream() -> AsyncGenerator[str, None]:
         ai_reply = ""
+        topic = None
         try:
             async for chunk in async_chat_with_rag(req.query, req.role, req.reasoning_effort):
                 ai_reply += chunk
@@ -94,4 +97,9 @@ async def consult_chat(
                     if retry >= 2:
                         # 兜底日志，实际可接入日志系统
                         print(f"[ERROR] AI消息持久化失败: {ex}")
+            # 查询 session topic
+            session = service.get_session(req.session_id)
+            topic = getattr(session, "topic", None)
+        # 尾包带上 topic 信息
+        yield f"[TOPIC]{json.dumps({'topic': topic})}"
     return StreamingResponse(event_stream(), media_type="text/event-stream")

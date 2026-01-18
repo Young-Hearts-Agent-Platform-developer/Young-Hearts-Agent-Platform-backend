@@ -19,7 +19,7 @@ class ConsultationMessage(ConsultationMessageBase):
         from_attributes = True
 
 class ConsultationSessionBase(BaseModel):
-    topic: Optional[str] = None
+    topic: Optional[str] = None  # 会话主题，可为空，首次 AI 回复后自动生成
     is_archived: Optional[bool] = False
 
 class ConsultationSessionCreate(ConsultationSessionBase):

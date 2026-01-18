@@ -1,5 +1,5 @@
 ---
-name: 功能对接信息生成器
+name: feature-info-generator
 description: 输入功能名称，自动检索代码，输出结构化的技术栈与接口关键信息，助力前后端高效协作。
 argument-hint: 请输入需要查询的功能名称。
 ---

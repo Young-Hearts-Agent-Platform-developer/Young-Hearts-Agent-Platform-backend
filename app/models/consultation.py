@@ -1,13 +1,15 @@
+
+from datetime import datetime, timezone
 from sqlalchemy import Column, BigInteger, String, DateTime, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime, timezone
+
 from app.models import Base
 
 class ConsultationSession(Base):
     __tablename__ = "consultation_sessions"
     id = Column(BigInteger, primary_key=True, index=True)
     user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False, index=True)
-    topic = Column(String(255), nullable=True)
+    topic = Column(String(255), nullable=True)  # 会话主题，可为空，首次 AI 回复后自动生成，可更新
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     is_archived = Column(Boolean, default=False)
 

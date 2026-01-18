@@ -1,14 +1,15 @@
 import os
-from app.core.config import settings
 import json
-import openai
 from typing import AsyncGenerator, Optional
-from app.db.session import get_db
-from app.services.consultation_service import ConsultationService
-from sqlalchemy.orm import Session
+
+import openai
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import SecretStr
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.db.session import get_db
 
 PROMPT_DIR = os.path.join(os.path.dirname(__file__), 'prompts')
 
@@ -26,6 +27,29 @@ def load_prompt(role: str) -> str:
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data.get('prompt', '')
+
+# 加载 topic 生成 prompt
+def load_topic_prompt() -> str:
+    path = os.path.join(PROMPT_DIR, "topic.json")
+    if not os.path.exists(path):
+        raise ValueError("Prompt 配置不存在: topic")
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data.get('prompt', '')
+
+# topic 生成（同步，供服务层调用）
+def generate_topic(user_message: str, ai_message: str) -> str:
+    prompt = load_topic_prompt()
+    prompt_filled = prompt.replace("{user_message}", user_message).replace("{ai_message}", ai_message)
+    llm = ChatOpenAI(api_key=SecretStr(ARK_API_KEY or ""), streaming=False)
+    messages = [
+        SystemMessage(content=prompt_filled)
+    ]
+    # 只取一次回复
+    result = llm.invoke(messages)
+    if hasattr(result, 'content'):
+        return str(result.content).strip()
+    return str(result).strip()
 
 async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[str] = None) -> AsyncGenerator[str, None]:
     prompt = load_prompt(role)
@@ -53,14 +77,22 @@ async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[
 
 # AI回复持久化辅助函数（供 consult.py 调用）
 def save_ai_message(session_id: int, content: str, sources=None):
-    db: Session = next(get_db())
-    service = ConsultationService(db)
-    retry = 0
-    while retry < 2:
+    db_gen = get_db()
+    db: Session = next(db_gen)
+    try:
+        from app.services.consultation_service import ConsultationService
+        service = ConsultationService(db)
+        retry = 0
+        while retry < 2:
+            try:
+                service.save_message(session_id=session_id, role="ai", content=content, sources=sources)
+                break
+            except Exception as ex:
+                retry += 1
+                if retry >= 2:
+                    print(f"[ERROR] AI消息持久化失败: {ex}")
+    finally:
         try:
-            service.save_message(session_id=session_id, role="ai", content=content, sources=sources)
-            break
-        except Exception as ex:
-            retry += 1
-            if retry >= 2:
-                print(f"[ERROR] AI消息持久化失败: {ex}")
+            next(db_gen)
+        except StopIteration:
+            pass
