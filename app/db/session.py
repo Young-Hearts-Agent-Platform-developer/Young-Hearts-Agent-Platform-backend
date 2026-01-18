@@ -18,8 +18,10 @@ def init_db():
     # attempt to import models to ensure metadata is registered
     try:
         from app.models import Base
-
         Base.metadata.create_all(bind=engine)
-    except Exception:
+    except Exception as e:
+        import traceback
+        print("[init_db] Exception occurred while creating tables:")
+        print(traceback.format_exc())
         # if no models defined yet, ignore
         pass

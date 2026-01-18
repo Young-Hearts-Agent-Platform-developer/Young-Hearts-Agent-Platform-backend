@@ -3,6 +3,9 @@ from app.core.config import settings
 import json
 import openai
 from typing import AsyncGenerator, Optional
+from app.db.session import get_db
+from app.services.consultation_service import ConsultationService
+from sqlalchemy.orm import Session
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import SecretStr
@@ -47,3 +50,17 @@ async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[
                     yield c
                 elif isinstance(c, tuple) and len(c) > 0:
                     yield str(c[0])
+
+# AI回复持久化辅助函数（供 consult.py 调用）
+def save_ai_message(session_id: int, content: str, sources=None):
+    db: Session = next(get_db())
+    service = ConsultationService(db)
+    retry = 0
+    while retry < 2:
+        try:
+            service.save_message(session_id=session_id, role="ai", content=content, sources=sources)
+            break
+        except Exception as ex:
+            retry += 1
+            if retry >= 2:
+                print(f"[ERROR] AI消息持久化失败: {ex}")
