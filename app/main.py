@@ -1,10 +1,7 @@
-
-
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+ 
 from app.core.config import settings
 from app.db.session import init_db
 from app.utils_openapi import generate_openapi_json
@@ -36,7 +33,7 @@ app.add_middleware(
     allow_origins=[
         "http://10.15.9.148:5173",
         "http://localhost:5173"
-    ],
+    ],  # 可根据实际情况指定前端地址，如 ["http://localhost:5173"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
