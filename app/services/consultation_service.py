@@ -1,3 +1,4 @@
+
 from typing import List, Optional, Any
 from sqlalchemy.orm import Session
 from app.models.consultation import ConsultationSession, ConsultationMessage
@@ -6,15 +7,9 @@ from app.models.user import User
 from app.db.session import get_db
 from sqlalchemy import desc
 from fastapi import HTTPException
-import json
+from app.services.auth import is_admin
 
-def is_admin(roles):
-    if isinstance(roles, str):
-        try:
-            roles = json.loads(roles)
-        except Exception:
-            return False
-    return isinstance(roles, list) and 'admin' in roles
+
 
 class ConsultationService:
     def __init__(self, db: Session):

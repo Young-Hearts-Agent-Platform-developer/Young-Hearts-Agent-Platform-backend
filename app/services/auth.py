@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from typing import cast
 
@@ -36,6 +37,14 @@ def authenticate_user(db: Session, username: str, password: str):
         return None
     return user
 
+# 管理员判定：roles 可为 list[str] 或 JSON 字符串，包含 'admin' 即为管理员
+def is_admin(roles):
+    if isinstance(roles, str):
+        try:
+            roles = json.loads(roles)
+        except Exception:
+            return False
+    return isinstance(roles, list) and 'admin' in roles
 
 # 权限装饰器：校验 current_user.roles
 def require_roles(roles):
