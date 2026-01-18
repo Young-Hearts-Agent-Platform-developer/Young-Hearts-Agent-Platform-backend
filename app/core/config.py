@@ -19,6 +19,8 @@ class Settings(BaseSettings):
 
     # ark api key
     ark_api_key: str | None = None
+    ark_base_url: str | None = None
+    ark_model: str | None = None
 
     class Config:
         env_file = ".env"
