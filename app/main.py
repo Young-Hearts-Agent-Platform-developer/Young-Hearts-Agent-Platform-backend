@@ -24,7 +24,6 @@ async def lifespan(app: FastAPI):
     generate_openapi_json(app, output_path="openapi.json")
     yield
 
-
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
 
 # 添加 CORS 中间件，允许前端跨域访问
