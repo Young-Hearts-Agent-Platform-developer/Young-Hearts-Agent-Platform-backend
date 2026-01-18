@@ -17,9 +17,9 @@ class ConsultationMessage(Base):
     __tablename__ = "consultation_messages"
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("consultation_sessions.id"), nullable=False, index=True)
-    role = Column(String(32), nullable=False)  # user/assistant/system
-    content = Column(Text, nullable=False)
-    sources = Column(Text, nullable=True)  # JSON 字符串或文本
+    role = Column(String(32), nullable=False)  # 枚举，user/ai
+    content = Column(Text, nullable=False)  # Markdown 格式内容
+    sources = Column(Text, nullable=True)  # (RAG 引用来源: [{title, id, score}])
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("ConsultationSession", back_populates="messages")
