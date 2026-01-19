@@ -180,6 +180,29 @@
       }
     },
     "/api/consult/sessions": {
+      "get": {
+        "tags": [
+          "consult"
+        ],
+        "summary": "List Sessions",
+        "operationId": "list_sessions_api_consult_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultationSession"
+                  },
+                  "type": "array",
+                  "title": "Response List Sessions Api Consult Sessions Get"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "consult"
@@ -187,14 +210,14 @@
         "summary": "Create Session",
         "operationId": "create_session_api_consult_sessions_post",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SessionCreateRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -203,64 +226,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConsultationSession"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "consult"
-        ],
-        "summary": "List Sessions",
-        "operationId": "list_sessions_api_consult_sessions_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 20,
-              "title": "Size"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ConsultationSession"
-                  },
-                  "title": "Response List Sessions Api Consult Sessions Get"
                 }
               }
             }
@@ -293,29 +258,6 @@
             "schema": {
               "type": "integer",
               "title": "Session Id"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 20,
-              "title": "Size"
             }
           }
         ],

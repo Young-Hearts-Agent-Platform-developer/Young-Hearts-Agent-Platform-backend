@@ -35,26 +35,22 @@ async def create_session(
     session = service.create_session(user_id=current_user.id, topic=req.topic or "")
     return session
 
-# 会话列表（分页）
+# 会话列表（仅返回最近20条，无分页）
 @router.get("/sessions", response_model=List[ConsultationSession])
 async def list_sessions(
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
     current_user=Depends(get_current_user),
     service: ConsultationService = Depends(get_consult_service)
 ):
-    return service.list_sessions(user_id=current_user.id, roles=current_user.roles, page=page, size=size)
+    return service.list_sessions_recent(user_id=current_user.id, roles=current_user.roles)
 
 # 会话详情（消息列表，分页）
 @router.get("/sessions/{session_id}", response_model=List[ConsultationMessage])
 async def get_session_detail(
     session_id: int = Path(...),
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
     current_user=Depends(get_current_user),
     service: ConsultationService = Depends(get_consult_service)
 ):
-    return service.list_messages(session_id=session_id, user_id=current_user.id, roles=current_user.roles, page=page, size=size)
+    return service.list_messages_all(session_id=session_id, user_id=current_user.id, roles=current_user.roles)
 
 # 删除会话
 @router.delete("/sessions/{session_id}")

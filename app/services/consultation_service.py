@@ -27,12 +27,12 @@ class ConsultationService:
         self.db.refresh(session)
         return session
 
-    def list_sessions(self, user_id: int, roles: List[str], page: int = 1, size: int = 20) -> List[ConsultationSession]:
+    def list_sessions_recent(self, user_id: int, roles: List[str]) -> List[ConsultationSession]:
         query = self.db.query(ConsultationSession)
         if not is_admin(roles):
             query = query.filter(ConsultationSession.user_id == user_id)
         query = query.order_by(desc(ConsultationSession.created_at))
-        return query.offset((page - 1) * size).limit(size).all()
+        return query.limit(20).all()
 
     def get_session_detail(self, session_id: int, user_id: int, roles: List[str]) -> ConsultationSession:
         session = self.db.query(ConsultationSession).filter(ConsultationSession.id == session_id).first()
@@ -95,11 +95,11 @@ class ConsultationService:
         self.db.refresh(message)
         return message
 
-    def list_messages(self, session_id: int, user_id: int, roles: List[str], page: int = 1, size: int = 20) -> List[ConsultationMessage]:
+    def list_messages_all(self, session_id: int, user_id: int, roles: List[str]) -> List[ConsultationMessage]:
         session = self.get_session_detail(session_id, user_id, roles)
         query = self.db.query(ConsultationMessage).filter(ConsultationMessage.session_id == session_id)
-        query = query.order_by(ConsultationMessage.created_at)
-        return query.offset((page - 1) * size).limit(size).all()
+        query = query.order_by(desc(ConsultationMessage.created_at))
+        return query.all()
 
     def delete_session(self, session_id: int, user_id: int, roles: List[str]) -> None:
         session = self.db.query(ConsultationSession).filter(ConsultationSession.id == session_id).first()
