@@ -1,11 +1,10 @@
 import os
 from functools import lru_cache
 from typing import List, Dict, Tuple, Optional, Any
-from app.core.config import settings  # 假设你有 config.py 管理 env
+from app.core.config import settings
 
 try:
     from langchain_chroma import Chroma
-    # 豆包兼容 OpenAI 接口，所以继续用 OpenAIEmbeddings
     from langchain_openai import OpenAIEmbeddings
     from langchain_core.documents import Document
 except ImportError:
@@ -13,7 +12,7 @@ except ImportError:
     Document = Any
     Chroma = Any
 
-# --- 1. 配置管理 (专门适配你的 .env 文件) ---
+# --- 1. 配置管理  ---
 class RetrieverConfig:
     # 向量数据库保存路径
     CHROMA_PATH: str = os.getenv("CHROMA_PATH", "./chroma_db_data")
@@ -21,19 +20,16 @@ class RetrieverConfig:
     # 检索阈值 (0-1)
     SCORE_THRESHOLD: float = float(os.getenv("RAG_SCORE_THRESHOLD", 0.6))
     
-    # --- 核心修改：读取 ARK_ 开头的环境变量 ---
+    # --- 读取 ARK_ 开头的环境变量 ---
     
     # 1. API Key
-    # 优先读取 ARK_API_KEY (你的配置文件), 如果没有则读 EMBEDDING_API_KEY
     EMBEDDING_API_KEY: str = os.getenv("ARK_API_KEY", os.getenv("EMBEDDING_API_KEY"))
     
     # 2. Base URL
-    # 你的配置文件是: https://ark.cn-beijing.volces.com/api/v3
     EMBEDDING_BASE_URL: str = os.getenv("ARK_BASE_URL", os.getenv("EMBEDDING_BASE_URL"))
     
     # 3. Embedding 模型 ID
-    # ⚠️ 注意：这里不能用 Chat 模型 ID (doubao-lite)
-    # 建议你在 .env 增加一个 ARK_EMBEDDING_MODEL
+    # 在 .env 增加一个 ARK_EMBEDDING_MODEL
     # 如果没找到，代码会尝试读取 ARK_MODEL，但这可能会报错
     EMBEDDING_MODEL: str = os.getenv("ARK_EMBEDDING_MODEL", os.getenv("ARK_MODEL"))
 

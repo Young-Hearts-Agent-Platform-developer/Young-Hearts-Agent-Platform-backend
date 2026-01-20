@@ -17,8 +17,26 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SECURE: bool = False
     SESSION_EXPIRE_MINUTES: int = 60 * 24  # 默认 24 小时
 
+    # 火山引擎 (豆包) 配置
+    ARK_API_KEY: str 
+    ARK_BASE_URL: str
+    
+    # 聊天模型 ID (用于生成答案)
+    ARK_MODEL: str 
+    
+    # Embedding 模型 ID (用于检索)
+    ARK_EMBEDDING_MODEL: str
+    
+    # 检索阈值
+    RAG_SCORE_THRESHOLD: float = 0.6
+    # Chroma 路径
+    CHROMA_PATH: str = "./chroma_db_data"
+
     class Config:
         env_file = ".env"
+        # 允许 .env 里有额外的变量而不报错
+        extra = "ignore"
+
 
 
 settings = Settings()
