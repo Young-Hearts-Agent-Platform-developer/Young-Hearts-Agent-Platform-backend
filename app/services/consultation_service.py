@@ -21,6 +21,9 @@ class ConsultationService:
         return self.db.query(ConsultationSession).filter(ConsultationSession.id == session_id).first()
 
     def create_session(self, user_id: int, topic: str) -> ConsultationSession:
+        # 若 topic 为空或仅包含空白字符，则默认为“新对话”
+        if not topic or (isinstance(topic, str) and topic.strip() == ""):
+            topic = "新对话"
         session = ConsultationSession(user_id=user_id, topic=topic)
         self.db.add(session)
         self.db.commit()

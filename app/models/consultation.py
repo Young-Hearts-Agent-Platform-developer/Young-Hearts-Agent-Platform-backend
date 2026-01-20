@@ -13,7 +13,7 @@ class ConsultationSession(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     is_archived = Column(Boolean, default=False)
 
-    messages = relationship("ConsultationMessage", back_populates="session")
+    messages = relationship("ConsultationMessage", back_populates="session", lazy="noload")
 
 class ConsultationMessage(Base):
     __tablename__ = "consultation_messages"

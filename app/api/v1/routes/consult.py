@@ -15,7 +15,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     query: str
     role: str
-    reasoning_effort: Optional[str] = None
+    reasoning_effort: Optional[str] = None  # 用于控制 AI 回答的复杂度、详细程度或推理方式
     session_id: Optional[int] = None
     # sources 字段不再由前端传递，仅后端持久化时预留
 
