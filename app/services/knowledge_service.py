@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.knowledge import KnowledgeItem, KnowledgeChunk
-from app.schemas.knowledge import KnowledgeItemCreate, KnowledgeItemRead, KnowledgeChunkCreate, KnowledgeChunkRead
+from app.schemas.knowledge import KnowledgeItemCreate, KnowledgeItemRead, KnowledgeItemUpdate, KnowledgeChunkCreate, KnowledgeChunkRead
 from datetime import datetime
 from typing import List, Optional
 
@@ -21,13 +21,20 @@ def create_knowledge_item(db: Session, item_in: KnowledgeItemCreate) -> Knowledg
 def get_knowledge_item(db: Session, item_id: int) -> Optional[KnowledgeItem]:
     return db.query(KnowledgeItem).filter(KnowledgeItem.id == item_id).first()
 
-def update_knowledge_item(db: Session, item_id: int, item_in: KnowledgeItemCreate) -> Optional[KnowledgeItem]:
+def update_knowledge_item(db: Session, item_id: int, item_in: KnowledgeItemUpdate) -> Optional[KnowledgeItem]:
+    """
+    支持部分更新的更新函数：
+    - 接受 `KnowledgeItemUpdate`（所有字段 Optional）
+    - 只对传入（被设置）的字段进行赋值
+    """
     item = get_knowledge_item(db, item_id)
     if not item:
         return None
-    for field, value in item_in.dict(exclude_unset=True).items():
+    # 使用 pydantic v2 的 model_dump 保持与 create_knowledge_item 中的用法一致
+    data = item_in.model_dump(exclude_unset=True)
+    for field, value in data.items():
         setattr(item, field, value)
-    item.updated_at = datetime.now()
+    item.updated_at = datetime.now()  # type: ignore[assignment]
     db.commit()
     db.refresh(item)
     return item
@@ -44,7 +51,7 @@ def delete_knowledge_item(db: Session, item_id: int) -> bool:
 # 新增：知识入库服务接口
 from app.knowledge.ingest import ingest_knowledge
 
-def ingest_knowledge_item(db: Session, title: str, content: str, tags: list = None):
+def ingest_knowledge_item(db: Session, title: str, content: str, tags: Optional[List] = None):
     """
     服务层：知识入库（严格对齐 create_knowledge_item 字段）
     """
@@ -67,11 +74,11 @@ def review_knowledge_item(db: Session, item_id: int, reviewer_id: int, review_co
     item = get_knowledge_item(db, item_id)
     if not item:
         return None
-    item.reviewed_by = reviewer_id
-    item.review_comments = review_comments
-    item.reviewed_at = datetime.now()
-    item.status = "published" if approve else "rejected"
-    item.updated_at = datetime.now()
+    item.reviewed_by = reviewer_id  # type: ignore[assignment]
+    item.review_comments = review_comments  # type: ignore[assignment]
+    item.reviewed_at = datetime.now()  # type: ignore[assignment]
+    item.status = "published" if approve else "rejected"  # type: ignore[assignment]
+    item.updated_at = datetime.now()  # type: ignore[assignment]
     db.commit()
     db.refresh(item)
     return item

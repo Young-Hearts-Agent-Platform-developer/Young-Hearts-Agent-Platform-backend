@@ -6,7 +6,7 @@ class KnowledgeItemBase(BaseModel):
     title: str
     summary: Optional[str] = None
     content: str
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
     category: Optional[str] = None
     author_id: int
     status: str
@@ -24,6 +24,21 @@ class KnowledgeItemRead(KnowledgeItemBase):
 
     class Config:
         orm_mode = True
+
+
+class KnowledgeItemUpdate(BaseModel):
+    title: Optional[str] = None
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    tags: Optional[List[str]] = None
+    category: Optional[str] = None
+    author_id: Optional[int] = None
+    status: Optional[str] = None
+    review_comments: Optional[str] = None
+    reviewed_by: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 class KnowledgeChunkBase(BaseModel):
     item_id: int

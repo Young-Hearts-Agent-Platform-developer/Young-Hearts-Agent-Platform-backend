@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from typing import Optional, List, Any
 from app.services.knowledge_service import ingest_knowledge_item
 from app.db.session import get_db
 
 router = APIRouter()
 
+
 @router.post("/knowledge/ingest")
-def ingest_knowledge_api(title: str, content: str, tags: list = None, db: Session = Depends(get_db)):
+def ingest_knowledge_api(title: str, content: str, tags: Optional[List[Any]] = None, db: Session = Depends(get_db)):
     """
     知识入库 API
     """

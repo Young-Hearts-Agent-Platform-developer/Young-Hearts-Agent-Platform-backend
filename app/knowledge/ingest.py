@@ -16,8 +16,10 @@ def ingest_documents(docs: Iterable[str]):
 
 from app.models.knowledge import KnowledgeItem
 from sqlalchemy.orm import Session
+from typing import Optional, List, Any
 
-def ingest_knowledge(session: Session, title: str, content: str, tags: list = None, summary: str = "", category: str = "", author_id: int = 0, status: str = "draft"):
+
+def ingest_knowledge(session: Session, title: str, content: str, tags: Optional[List[Any]] = None, summary: str = "", category: str = "", author_id: int = 0, status: str = "draft"):
     """
     严格对齐 create_knowledge_item 的字段补全逻辑，完整入库 KnowledgeItem。
     """

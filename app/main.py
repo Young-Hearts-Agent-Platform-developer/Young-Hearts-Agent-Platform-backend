@@ -10,6 +10,13 @@ from app.models.user import User
 from app.models.knowledge import KnowledgeItem, KnowledgeChunk
 # include routers
 from app.api.v1.routes import auth as auth_router
+# optional: users router may not exist in all branches
+try:
+    from app.api.v1.routes import users as users_router  # type: ignore
+except Exception:
+    users_router = None  # type: ignore
+
+# optional: knowledge router
 try:
     from app.api.v1.routes import knowledge as knowledge_router
 except Exception:
@@ -40,6 +47,8 @@ app.add_middleware(
 
 # register API routers
 app.include_router(auth_router.router, prefix="/api/auth", tags=["auth"])
+if users_router:
+    app.include_router(users_router.router, prefix="/api/users", tags=["users"])
 if knowledge_router is not None:
     app.include_router(knowledge_router.router, prefix="/api", tags=["knowledge"])
 

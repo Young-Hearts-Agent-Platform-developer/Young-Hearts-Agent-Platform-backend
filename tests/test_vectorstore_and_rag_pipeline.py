@@ -17,7 +17,7 @@ class DummyKnowledgeChunk:
 
 # monkeypatch KnowledgeChunk 用于测试
 import app.knowledge.rag_pipeline as rag_pipeline
-rag_pipeline.KnowledgeChunk = DummyKnowledgeChunk
+setattr(rag_pipeline, "KnowledgeChunk", DummyKnowledgeChunk)
 
 
 def test_vectorize_knowledge_item_basic():
