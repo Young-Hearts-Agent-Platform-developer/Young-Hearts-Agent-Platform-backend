@@ -101,3 +101,67 @@ def test_update_partial(db):
     # 未更新字段保持原值
     assert updated.content == "原内容"
     assert updated.author_id == 10
+
+
+def test_update_full(db):
+    # 创建初始条目
+    item_in = KnowledgeItemCreate(
+        title="原始标题",
+        summary="原始摘要",
+        content="原始内容",
+        tags=["t1"],
+        category="分类",
+        author_id=5,
+        status="draft"
+    )
+    item = create_knowledge_item(db, item_in)
+
+    # 全量更新：提供所有字段
+    update_in = KnowledgeItemUpdate(
+        title="新标题",
+        summary="新摘要",
+        content="新内容",
+        tags=["x", "y"],
+        category="新分类",
+        author_id=6,
+        status="published",
+        review_comments="好",
+        reviewed_by=2
+    )
+    updated = update_knowledge_item(db, item.id, update_in)
+    assert updated is not None
+    assert updated.title == "新标题"
+    assert updated.summary == "新摘要"
+    assert updated.content == "新内容"
+    assert updated.tags == ["x", "y"]
+    assert updated.category == "新分类"
+    assert updated.author_id == 6
+    assert updated.status == "published"
+    assert updated.review_comments == "好"
+    assert updated.reviewed_by == 2
+
+
+def test_update_no_fields(db):
+    # 创建初始条目
+    item_in = KnowledgeItemCreate(
+        title="保持标题",
+        summary="保持摘要",
+        content="保持内容",
+        tags=["keep"],
+        category="保持分类",
+        author_id=7,
+        status="draft"
+    )
+    item = create_knowledge_item(db, item_in)
+
+    # 无字段更新：传入空的 KnowledgeItemUpdate，不应修改任何字段
+    update_in = KnowledgeItemUpdate()
+    updated = update_knowledge_item(db, item.id, update_in)
+    assert updated is not None
+    assert updated.title == "保持标题"
+    assert updated.summary == "保持摘要"
+    assert updated.content == "保持内容"
+    assert updated.tags == ["keep"]
+    assert updated.category == "保持分类"
+    assert updated.author_id == 7
+    assert updated.status == "draft"
