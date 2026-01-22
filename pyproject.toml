@@ -16,4 +16,8 @@ dependencies = [
     "python_jose==3.5.0",
     "SQLAlchemy==2.0.45",
     "uvicorn>=0.40.0",
+    "langchain-chroma>=1.1.0",
+    "langchain-openai>=1.1.7",
+    "langchain-core>=1.2.7",
+    "pytest-asyncio>=1.3.0",
 ]
