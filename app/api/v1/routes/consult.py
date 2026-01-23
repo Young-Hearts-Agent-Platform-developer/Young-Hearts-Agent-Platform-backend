@@ -69,33 +69,64 @@ async def consult_chat(
     current_user=Depends(get_current_user),
     service: ConsultationService = Depends(get_consult_service)
 ):
-    
+
+    # 先持久化用户消息，异常时返回 500
+    if not req.session_id or not req.query:
+        raise HTTPException(status_code=400, detail="session_id 和 query 不能为空")
+    try:
+        service.save_message(
+            session_id=req.session_id,
+            role="user",
+            content=req.query,
+            sources=None
+        )
+    except Exception as ex:
+        # 可接入日志系统
+        print(f"[ERROR] 用户消息持久化失败: {ex}")
+        raise HTTPException(status_code=500, detail="用户消息持久化失败")
+
     async def event_stream() -> AsyncGenerator[str, None]:
         ai_reply = ""
         topic = None
+        user_first_query = req.query
+        error_flag = False
+        error_msg = ""
+        # session_id 缺失，直接返回 [ERROR]
+        if not req.session_id:
+            yield "[ERROR]session_id missing"
+            return
         try:
             async for chunk in async_chat_with_rag(req.query, req.role, req.reasoning_effort):
                 ai_reply += chunk
                 yield chunk
         except Exception as e:
-            # 流式输出异常时，前端可感知
-            yield f"[ERROR]{str(e)}"
-            raise
-        # AI回复持久化，sources 预留参数，当前为 None
-        if req.session_id and ai_reply:
-            retry = 0
-            while retry < 2:
-                try:
-                    service.save_message(session_id=req.session_id, role="ai", content=ai_reply, sources=None)
-                    break
-                except Exception as ex:
-                    retry += 1
-                    if retry >= 2:
-                        # 兜底日志，实际可接入日志系统
-                        print(f"[ERROR] AI消息持久化失败: {ex}")
-            # 查询 session topic
-            session = service.get_session(req.session_id)
-            topic = getattr(session, "topic", None)
+            error_flag = True
+            error_msg = str(e)
+            yield f"[ERROR]{error_msg}"
+        # AI回复异常或无内容，不生成 topic，尾包返回 [ERROR]
+        if error_flag or not ai_reply:
+            yield "[ERROR]"
+            return
+        # AI回复持久化并生成 topic
+        retry = 0
+        while retry < 2:
+            try:
+                service.save_ai_message_and_generate_topic(
+                    session_id=req.session_id,
+                    ai_content=ai_reply,
+                    user_content=user_first_query,
+                    sources=None
+                )
+                break
+            except Exception as ex:
+                retry += 1
+                if retry >= 2:
+                    print(f"[ERROR] AI消息持久化失败: {ex}")
+                    yield "[ERROR]"
+                    return
+        # 查询 session topic
+        session = service.get_session(req.session_id)
+        topic = getattr(session, "topic", None)
         # 尾包带上 topic 信息
         yield f"[TOPIC]{json.dumps({'topic': topic})}"
     return StreamingResponse(event_stream(), media_type="text/event-stream")

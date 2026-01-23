@@ -48,7 +48,12 @@ def load_topic_prompt() -> str:
 def generate_topic(user_message: str, ai_message: str) -> str:
     prompt = load_topic_prompt()
     prompt_filled = prompt.replace("{user_message}", user_message).replace("{ai_message}", ai_message)
-    llm = ChatOpenAI(api_key=SecretStr(ARK_API_KEY or ""), streaming=False)
+    llm = ChatOpenAI(
+        api_key=SecretStr(ARK_API_KEY or ""), 
+        base_url=ARK_BASE_URL,
+        model=str(ARK_MODEL or "gpt-3.5-turbo"), 
+        temperature=0.7,                              # 生成随机性（0-1，值越高越灵活）  
+        streaming=True)
     messages = [
         SystemMessage(content=prompt_filled)
     ]

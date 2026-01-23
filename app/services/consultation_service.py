@@ -54,7 +54,7 @@ class ConsultationService:
 
     def save_ai_message_and_generate_topic(self, session_id: int, ai_content: str, user_content: Optional[str] = None, sources: Optional[Any] = None) -> ConsultationMessage:
         """
-        保存 AI 消息，并在首次 AI 回复后自动生成 topic
+        保存 AI 消息，并在首次 AI 回复后自动生成 topic，异常时记录日志防止误生成
         :param session_id: 会话ID
         :param ai_content: AI 回复内容
         :param user_content: 用户首次提问内容（仅首次AI回复时需传入）
@@ -63,6 +63,7 @@ class ConsultationService:
         """
         session = self.db.query(ConsultationSession).filter(ConsultationSession.id == session_id).first()
         if session is None:
+            print(f"[ERROR] save_ai_message_and_generate_topic: Session not found, session_id={session_id}")
             raise HTTPException(status_code=404, detail="Session not found")
         # 获取当前 topic 值，避免直接用 Column 对象
         current_topic = getattr(session, 'topic', None)
@@ -70,27 +71,44 @@ class ConsultationService:
             topic_value = current_topic
         else:
             topic_value = None
-        # 判断是否首次生成 topic
+        
+        # 判断是否首次生成 topic (幂等性检查)
         if (topic_value is None) or (topic_value == "新对话"):
-            # 需有用户首次提问内容
-            if not user_content:
-                # 查找该 session 的第一条 user 消息
-                first_user_msg = self.db.query(ConsultationMessage).filter(
-                    ConsultationMessage.session_id == session_id,
-                    ConsultationMessage.role == "user"
-                ).order_by(ConsultationMessage.created_at.asc()).first()
-                if first_user_msg:
-                    msg_content = getattr(first_user_msg, 'content', None)
-                    user_content = msg_content if isinstance(msg_content, str) else None
+            try:
+                # 需有用户首次提问内容
+                if not user_content:
+                    # 查找该 session 的第一条 user 消息
+                    first_user_msg = self.db.query(ConsultationMessage).filter(
+                        ConsultationMessage.session_id == session_id,
+                        ConsultationMessage.role == "user"
+                    ).order_by(ConsultationMessage.created_at.asc()).first()
+                    if first_user_msg:
+                        msg_content = getattr(first_user_msg, 'content', None)
+                        user_content = msg_content if isinstance(msg_content, str) else None
+                    else:
+                        user_content = ""
+                # 生成 topic
+                safe_user_content = user_content if user_content is not None else ""
+                safe_ai_content = ai_content if ai_content is not None else ""
+                new_topic = generate_topic(safe_user_content, safe_ai_content)
+                
+                # 原子更新：仅当数据库中 topic 仍为空或“新对话”时更新，防止并发覆盖
+                result = self.db.query(ConsultationSession).filter(
+                    ConsultationSession.id == session_id,
+                    (ConsultationSession.topic == None) | (ConsultationSession.topic == "新对话")
+                ).update({"topic": new_topic}, synchronize_session=False)
+
+                if result > 0:
+                    self.db.commit()
+                    self.db.refresh(session)
                 else:
-                    user_content = ""
-            # 生成 topic
-            safe_user_content = user_content if user_content is not None else ""
-            safe_ai_content = ai_content if ai_content is not None else ""
-            topic = generate_topic(safe_user_content, safe_ai_content)
-            # 通过 setattr 赋值，避免直接赋值 Column
-            setattr(session, 'topic', topic)
-            self.db.commit()
+                    # 若并未更新（可能已被其他并发请求修改），则刷新 session 状态
+                    self.db.expire(session, ['topic'])
+                    self.db.refresh(session)
+
+            except Exception as ex:
+                print(f"[ERROR] topic 生成异常: {ex}, session_id={session_id}")
+                # 不抛出，防止误生成
         # 保存 AI 消息
         message = ConsultationMessage(session_id=session_id, role="ai", content=ai_content, sources=sources)
         self.db.add(message)
