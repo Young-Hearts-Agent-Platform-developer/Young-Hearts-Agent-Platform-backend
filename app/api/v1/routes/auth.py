@@ -56,8 +56,7 @@ async def login(user_in: UserLogin, response: Response, request: Request):
     user_agent = request.headers.get("user-agent", "")
     # 简单判断：web端用cookie，app端返回session_id
     if "web" in user_agent.lower():
-        # 使用 SameSite=None 时需要同时设置 Secure=True（现代浏览器要求）
-        response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="none", secure=True)
+        response.set_cookie(key="session_id", value=session_id, httponly=True)
         return user
     else:
         return {"user": user, "session_id": session_id}

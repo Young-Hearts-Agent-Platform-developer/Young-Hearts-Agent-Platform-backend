@@ -4,7 +4,8 @@ description: 执行 Planner 生成的计划，按 Phase 分阶段实施并验证
 argument-hint: 计划文档路径与 Phase (示例: "plans/feature.md, Phase 1")
 tools:
   ['read', 'edit', 'search', 'web', 'todo']
-model: Grok Code Fast 1 (copilot)
+model: GPT-4.1 (copilot)
+infer: false
 handoffs:
   - label: 返回规划阶段 (Planner)
     agent: Planner
