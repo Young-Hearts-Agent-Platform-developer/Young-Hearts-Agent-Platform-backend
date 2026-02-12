@@ -84,6 +84,25 @@ async def consult_chat(
         # 可接入日志系统
         print(f"[ERROR] 用户消息持久化失败: {ex}")
         raise HTTPException(status_code=500, detail="用户消息持久化失败")
+    
+    def _format_sse(event: str, data) -> str:
+        """
+        格式化为 SSE 消息字符串。
+        Args:
+            event: 事件类型 (message, topic, error, done)
+            data: 数据载荷。
+                - 如果是 dict，将被 json.dumps
+                - 如果是 str 且 event != 'done'，将被封装为 {"content": str} 后 dumps (针对 message)
+                - 如果是 'done' 事件，data 保持原样 (通常为 [DONE])
+        """
+        payload = ""
+        if event == "done":
+            payload = str(data)
+        elif event == "message" and isinstance(data, str):
+            payload = json.dumps({"content": data}, ensure_ascii=False)
+        else:
+            payload = json.dumps(data, ensure_ascii=False)
+        return f"event: {event}\ndata: {payload}\n\n"
 
     async def event_stream() -> AsyncGenerator[str, None]:
         ai_reply = ""
@@ -91,21 +110,24 @@ async def consult_chat(
         user_first_query = req.query
         error_flag = False
         error_msg = ""
-        # session_id 缺失，直接返回 [ERROR]
+        # session_id 缺失，直接返回 error 和 done
         if not req.session_id:
-            yield "[ERROR]session_id missing"
+            yield _format_sse("error", {"detail": "session_id missing"})
+            yield _format_sse("done", "[DONE]")
             return
         try:
             async for chunk in async_chat_with_rag(req.query, req.role, req.reasoning_effort):
                 ai_reply += chunk
-                yield chunk
+                yield _format_sse("message", chunk)
         except Exception as e:
             error_flag = True
             error_msg = str(e)
-            yield f"[ERROR]{error_msg}"
-        # AI回复异常或无内容，不生成 topic，尾包返回 [ERROR]
+            yield _format_sse("error", {"detail": error_msg})
+        # AI回复异常或无内容，不生成 topic，尾包返回 error 和 done
         if error_flag or not ai_reply:
-            yield "[ERROR]"
+            if not error_flag:  # 如果没有异常，但无内容
+                yield _format_sse("error", {"detail": "AI回复为空"})
+            yield _format_sse("done", "[DONE]")
             return
         # AI回复持久化并生成 topic
         retry = 0
@@ -122,11 +144,13 @@ async def consult_chat(
                 retry += 1
                 if retry >= 2:
                     print(f"[ERROR] AI消息持久化失败: {ex}")
-                    yield "[ERROR]"
+                    yield _format_sse("error", {"detail": "AI消息持久化失败"})
+                    yield _format_sse("done", "[DONE]")
                     return
         # 查询 session topic
         session = service.get_session(req.session_id)
         topic = getattr(session, "topic", None)
-        # 尾包带上 topic 信息
-        yield f"[TOPIC]{json.dumps({'topic': topic})}"
+        # 尾包带上 topic 信息 和 done
+        yield _format_sse("topic", {"topic": topic})
+        yield _format_sse("done", "[DONE]")
     return StreamingResponse(event_stream(), media_type="text/event-stream")
