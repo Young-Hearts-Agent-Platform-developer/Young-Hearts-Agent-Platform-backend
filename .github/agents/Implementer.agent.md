@@ -5,7 +5,6 @@ argument-hint: 计划文档路径与 Phase (示例: "plans/feature.md, Phase 1")
 tools:
   ['read', 'edit', 'search', 'web', 'todo']
 model: GPT-4.1 (copilot)
-infer: false
 handoffs:
   - label: 返回规划阶段 (Planner)
     agent: Planner

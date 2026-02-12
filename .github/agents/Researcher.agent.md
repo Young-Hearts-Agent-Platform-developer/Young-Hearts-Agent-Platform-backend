@@ -4,7 +4,6 @@ description: 代码库研究专家代理 — 在 VS Code / GitHub Copilot 环境
 argument-hint: 必需 "研究主题"。若为 "更新模式"，请确保已打开或引用现有的研究报告文件。
 tools:
   ['read', 'edit', 'search', 'web', 'todo']
-infer: false
 handoffs:
   - label: 进入计划阶段（Planner）
     agent: Planner

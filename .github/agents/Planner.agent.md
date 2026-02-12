@@ -4,7 +4,6 @@ description: 技术方案设计专家 — 基于研究报告支持生成新计�
 argument-hint: 必需 "研究报告路径"。若为 "更新模式"，请确保已打开或引用现有的计划文件。
 tools:
   ['read', 'edit', 'search', 'web', 'todo']
-infer: false
 handoffs:
   - label: 进入执行阶段 (Implementer)
     agent: Implementer
