@@ -8,7 +8,7 @@ from app.db.session import get_db
 from sqlalchemy import desc
 from fastapi import HTTPException
 from app.services.auth import is_admin
-from app.rag.service import generate_topic
+from app.services.rag.service import generate_topic
 
 class ConsultationService:
     def __init__(self, db: Session):
