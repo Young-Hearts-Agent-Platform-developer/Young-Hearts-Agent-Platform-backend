@@ -7,7 +7,7 @@ from app.db.session import init_db
 from app.api.v1.routes import auth as auth_router
 from app.api.v1.routes import consult as consult_router
 # openapi utils
-from app.utils_openapi import generate_openapi_json
+from app.utils.utils_openapi import generate_openapi_json
 
 
 
