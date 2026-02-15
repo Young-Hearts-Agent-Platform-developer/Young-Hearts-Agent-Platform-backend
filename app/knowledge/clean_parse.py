@@ -198,11 +198,13 @@ def parse_and_clean_entry(entry: Union[str, bytes, Any]) -> List[Dict]:
     else:
         text = _auto_detect_and_read(entry)
     text_check = (text or '').strip().lower()
+    # 边界与异常情况覆盖
     if (
         not text_check
         or text_check == "[unparseable]"
         or "corrupt" in text_check
         or text_check == "this file will be corrupted."
+        or text_check == ""
     ):
         logger.error(f"未能解析出文本: {entry}")
         return [{"text": "[UNPARSEABLE]", "meta": {"error": True}}]
@@ -210,6 +212,9 @@ def parse_and_clean_entry(entry: Union[str, bytes, Any]) -> List[Dict]:
     # 2. 切片
     chunks = _split_text(text)
     chunks = _dedup_and_clean(chunks)
+    if not chunks:
+        logger.error(f"切片后无有效内容: {entry}")
+        return [{"text": "[UNPARSEABLE]", "meta": {"error": True}}]
 
     # 3. PII 检测与脱敏
     results = []
