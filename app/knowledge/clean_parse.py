@@ -168,12 +168,12 @@ def _split_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> Li
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 def _dedup_and_clean(chunks: List[str]) -> List[str]:
-    # 去重、去噪、格式标准化
+    # 去重、去噪、格式标准化，过滤特殊标记和空行
     seen = set()
     result = []
     for c in chunks:
         c = c.strip()
-        if not c or c in seen:
+        if not c or c in seen or c.lower() in {"[unparseable]", "this file will be corrupted.", "corrupt"}:
             continue
         seen.add(c)
         result.append(c)
@@ -220,11 +220,15 @@ def parse_and_clean_entry(entry: Union[str, bytes, Any]) -> List[Dict]:
     results = []
     for idx, chunk in enumerate(chunks):
         masked, pii_logs = pii_registry.detect_and_mask(chunk)
+        # 增强异常标记：如 chunk 仍为特殊标记则 meta.error = True
+        meta = {
+            "chunk_id": idx,
+            "pii": pii_logs
+        }
+        if chunk.lower() in {"[unparseable]", "this file will be corrupted.", "corrupt"}:
+            meta["error"] = True
         results.append({
             "text": masked,
-            "meta": {
-                "chunk_id": idx,
-                "pii": pii_logs
-            }
+            "meta": meta
         })
     return results
