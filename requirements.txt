@@ -18,6 +18,20 @@ argon2-cffi==25.1.0 \
     --hash=sha256:694ae5cc8a42f4c4e2bf2ca0e64e51e23a040c6a517a85074683d3959e1346c1 \
     --hash=sha256:fdc8b074db390fccb6eb4a3604ae7231f219aa669a2652e0f20e16ba513d5741
     # via young-hearts-agent-platform-backend
+    langchain==1.2.9 \
+        --hash=sha256:c1af39d22b7f0415a6f8fa63b37f692335601d3333592c481b899166c55f3fcb
+    unstructured==0.18.31 \
+        --hash=sha256:fab4641176cb9b192ed38048758aa0d9843121d03626d18f42275afb31e5b2d3
+    pytesseract==0.3.13 \
+        --hash=sha256:7a99c6c2ac598360693d83a416e36e0b33a67638bb9d77fdcac094a3589d4b34
+    pdfplumber==0.10.3 \
+        --hash=sha256:7cb73f382278967db8d0e681f67aca82b41c32861df1d85f9f6a2cf18a175fa8
+    python-docx==1.1.0 \
+        --hash=sha256:bac9773278098a1ddc43a52d84e22f5909c4a3080a624530b3ecb3771b07c6cd
+    tqdm==4.66.2 \
+        --hash=sha256:1ee4f8a893eb9bef51c6e35730cebf234d5d0b6bd112b0271e10ed7c24a02bd9
+    pdfminer.six==20221105 \
+        --hash=sha256:1eaddd712d5b2732f8ac8486824533514f8ba12a0787b3d5fe1e686cd826532d
 argon2-cffi-bindings==25.1.0 \
     --hash=sha256:1db89609c06afa1a214a69a462ea741cf735b29a57530478c06eb81dd403de99 \
     --hash=sha256:1e021e87faa76ae0d413b619fe2b65ab9a037f24c60a1e6cc43457ae20de6dc6 \
