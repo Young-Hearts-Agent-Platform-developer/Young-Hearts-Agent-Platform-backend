@@ -46,7 +46,7 @@ def test_patch_knowledge_api_partial_update():
     client = TestClient(app)
 
     # 部分更新：只更新 title
-    resp = client.patch(f"/knowledge/{item.id}", json={"title": "新标题"})
+    resp = client.patch(f"/api/knowledge/{item.id}", json={"title": "新标题"})
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["title"] == "新标题"
@@ -102,7 +102,7 @@ def test_patch_knowledge_api_full_update():
         "author_id": 2,
         "status": "published"
     }
-    resp = client.patch(f"/knowledge/{item.id}", json=payload)
+    resp = client.patch(f"/api/knowledge/{item.id}", json=payload)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["title"] == "新标题"
@@ -147,7 +147,7 @@ def test_patch_knowledge_api_no_change():
     client = TestClient(app)
 
     # 无字段更新：发送空对象
-    resp = client.patch(f"/knowledge/{item.id}", json={})
+    resp = client.patch(f"/api/knowledge/{item.id}", json={})
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["title"] == "保持标题"
@@ -157,3 +157,44 @@ def test_patch_knowledge_api_no_change():
         os.unlink(db_path)
     except Exception:
         pass
+
+# ----------------- 数据清洗与解析主流程 API 测试 -----------------
+import pytest
+from app.knowledge.clean_parse import parse_and_clean_entry
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+
+@pytest.mark.parametrize("filename,expected_pii", [
+    ("test_pii_email.txt", ["email"]),
+    ("test_pii_address.html", ["address"]),
+    ("test_empty.txt", []),
+    ("test_pii_bankcard.png", ["bankcard"]),
+])
+def test_parse_and_clean_entry_api_samples(filename, expected_pii):
+    path = os.path.join(DATA_DIR, filename)
+    results = parse_and_clean_entry(path)
+    assert isinstance(results, list)
+    # 空/损坏文件应有特殊标记
+    if filename == "test_empty.txt":
+        assert results and ("UNPARSEABLE" in results[0]["text"] or results[0]["meta"].get("error"))
+    else:
+        assert any(r["text"].strip() for r in results)
+    # 断言PII被替换
+    for r in results:
+        for pii_type in expected_pii:
+            if r["meta"]["pii"]:
+                for pii in r["meta"]["pii"]:
+                    assert pii["type"] in expected_pii
+            if any(pii_type == pii["type"] for pii in r["meta"]["pii"]):
+                assert "[MASK]" in r["text"]
+
+# 异常兜底测试：不支持的文件类型
+def test_parse_and_clean_entry_api_unsupported():
+    fake_path = os.path.join(DATA_DIR, "test.unsupported")
+    with open(fake_path, "w") as f:
+        f.write("some content")
+    try:
+        results = parse_and_clean_entry(fake_path)
+        assert results and ("UNPARSEABLE" in results[0]["text"] or results[0]["meta"].get("error"))
+    finally:
+        os.remove(fake_path)

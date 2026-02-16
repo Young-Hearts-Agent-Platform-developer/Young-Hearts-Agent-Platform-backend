@@ -72,6 +72,8 @@ pii_registry.register("email", r"[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}")
 # address规则增强：支持中英文混合地名和常见英文地址关键词
 address_pattern = r"([\u4e00-\u9fa5]{2,}(省|市|区|县|镇|乡|村|路|街|号))|((No\.\s*\d+|Road|District|Province|Street|Avenue|Lane|Building|Block|Floor|Room|\d{1,5}\s+[A-Za-z]+\s+(Road|Street|Avenue|Lane|District|Province)))"
 pii_registry.register("address", address_pattern)
+# 银行卡号规则（16-19位以6开头）
+pii_registry.register("bankcard", r"6\d{15,18}")
 
 
 
@@ -188,47 +190,52 @@ def parse_and_clean_entry(entry: Union[str, bytes, Any]) -> List[Dict]:
         List[dict] 结构化清洗结果
     """
     # 1. 解析文本
-    if partition:
-        try:
-            elements = partition(entry)
-            text = "\n".join(str(e) for e in elements)
-        except Exception as e:
-            logger.warning(f"unstructured 解析失败: {e}, 尝试兜底解析")
+    try:
+        if partition:
+            try:
+                elements = partition(entry)
+                text = "\n".join(str(e) for e in elements)
+            except Exception as e:
+                logger.warning(f"unstructured 解析失败: {e}, 尝试兜底解析")
+                text = _auto_detect_and_read(entry)
+        else:
             text = _auto_detect_and_read(entry)
-    else:
-        text = _auto_detect_and_read(entry)
-    text_check = (text or '').strip().lower()
-    # 边界与异常情况覆盖
-    if (
-        not text_check
-        or text_check == "[unparseable]"
-        or "corrupt" in text_check
-        or text_check == "this file will be corrupted."
-        or text_check == ""
-    ):
-        logger.error(f"未能解析出文本: {entry}")
-        return [{"text": "[UNPARSEABLE]", "meta": {"error": True}}]
+        text_check = (text or '').strip().lower()
+        # 边界与异常情况覆盖
+        if (
+            not text_check
+            or text_check == "[unparseable]"
+            or "corrupt" in text_check
+            or text_check == "this file will be corrupted."
+            or text_check == ""
+        ):
+            logger.error(f"未能解析出文本: {entry}")
+            return [{"text": "[UNPARSEABLE]", "meta": {"error": True, "log": "未能解析出文本"}}]
 
-    # 2. 切片
-    chunks = _split_text(text)
-    chunks = _dedup_and_clean(chunks)
-    if not chunks:
-        logger.error(f"切片后无有效内容: {entry}")
-        return [{"text": "[UNPARSEABLE]", "meta": {"error": True}}]
+        # 2. 切片
+        chunks = _split_text(text)
+        chunks = _dedup_and_clean(chunks)
+        if not chunks:
+            logger.error(f"切片后无有效内容: {entry}")
+            return [{"text": "[UNPARSEABLE]", "meta": {"error": True, "log": "切片后无有效内容"}}]
 
-    # 3. PII 检测与脱敏
-    results = []
-    for idx, chunk in enumerate(chunks):
-        masked, pii_logs = pii_registry.detect_and_mask(chunk)
-        # 增强异常标记：如 chunk 仍为特殊标记则 meta.error = True
-        meta = {
-            "chunk_id": idx,
-            "pii": pii_logs
-        }
-        if chunk.lower() in {"[unparseable]", "this file will be corrupted.", "corrupt"}:
-            meta["error"] = True
-        results.append({
-            "text": masked,
-            "meta": meta
-        })
-    return results
+        # 3. PII 检测与脱敏
+        results = []
+        for idx, chunk in enumerate(chunks):
+            masked, pii_logs = pii_registry.detect_and_mask(chunk)
+            # 增强异常标记：如 chunk 仍为特殊标记则 meta.error = True
+            meta = {
+                "chunk_id": idx,
+                "pii": pii_logs
+            }
+            if chunk.lower() in {"[unparseable]", "this file will be corrupted.", "corrupt"}:
+                meta["error"] = True
+                meta["log"] = "特殊标记内容"
+            results.append({
+                "text": masked,
+                "meta": meta
+            })
+        return results
+    except Exception as e:
+        logger.error(f"解析主流程异常: {e}")
+        return [{"text": "[UNPARSEABLE]", "meta": {"error": True, "log": str(e)}}]

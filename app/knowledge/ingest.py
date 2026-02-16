@@ -7,11 +7,25 @@ from typing import Iterable
 
 
 def ingest_documents(docs: Iterable[str]):
-    """Stub: accept iterable of strings and return count."""
+    """
+    支持异常兜底的文档入库流程。
+    :param docs: 可迭代的文档路径或内容
+    :return: 入库统计与异常日志
+    """
+    from app.knowledge.clean_parse import parse_and_clean_entry
     count = 0
-    for _ in docs:
-        count += 1
-    return {"ingested": count}
+    errors = []
+    for doc in docs:
+        try:
+            results = parse_and_clean_entry(doc)
+            # 检查是否全部为异常块
+            if all(r.get("meta", {}).get("error") for r in results):
+                errors.append({"doc": doc, "reason": results[0]["meta"].get("log", "解析失败")})
+            else:
+                count += 1
+        except Exception as e:
+            errors.append({"doc": doc, "reason": str(e)})
+    return {"ingested": count, "errors": errors}
 
 
 from app.models.knowledge import KnowledgeItem

@@ -17,12 +17,12 @@ def register_user(username, password, roles=None):
         # 明确 roles 只允许 List[str]，不做类型兼容
         assert isinstance(roles, list) and all(isinstance(r, str) for r in roles)
         payload["roles"] = roles
-    r = client.post("/users/register", json=payload)
+    r = client.post("/api/users/register", json=payload)
     assert r.status_code == 201, r.text
     return r.json()
 
 def login_user(username, password, use_cookie=False):
-    r = client.post("/auth/login", json={"username": username, "password": password})
+    r = client.post("/api/auth/login", json={"username": username, "password": password})
     assert r.status_code == 200, r.text
     data = r.json()
     session_id = data.get("session_id")
@@ -35,20 +35,20 @@ def login_user(username, password, use_cookie=False):
 
 def logout_user(session_id=None, cookies=None):
     if cookies:
-        r = client.post("/auth/logout", cookies=cookies)
+        r = client.post("/api/auth/logout", cookies=cookies)
     elif session_id:
-        r = client.post("/auth/logout", headers={"X-Session-ID": session_id})
+        r = client.post("/api/auth/logout", headers={"X-Session-ID": session_id})
     else:
-        r = client.post("/auth/logout")
+        r = client.post("/api/auth/logout")
     assert r.status_code == 200, r.text
 
 def get_me(headers=None, cookies=None):
     if cookies:
-        r = client.get("/users/me", cookies=cookies)
+        r = client.get("/api/users/me", cookies=cookies)
     elif headers:
-        r = client.get("/users/me", headers=headers)
+        r = client.get("/api/users/me", headers=headers)
     else:
-        r = client.get("/users/me")
+        r = client.get("/api/users/me")
     return r
 
 def test_register_login_logout_web_and_app():
@@ -91,7 +91,7 @@ def test_role_permission_and_sensitive_field():
     r2 = client.get("/protected/volunteer", headers=headers)
     assert r2.status_code == 403
     # 敏感字段脱敏校验（如有）
-    # r3 = client.get("/users/me", headers=headers)
+    # r3 = client.get("/api/users/me", headers=headers)
     # assert "sensitive_field" not in r3.json()  # 示例
 
 def test_session_expiry():
@@ -108,7 +108,7 @@ def test_register_duplicate():
     username = f"dupuser_{uuid.uuid4().hex[:8]}"
     password = "testpass123"
     register_user(username, password)
-    r = client.post("/users/register", json={
+    r = client.post("/api/users/register", json={
         "username": username,
         "password": password,
         "email": f"{username}@example.com",
@@ -147,7 +147,7 @@ def test_register_multi_roles_and_profiles():
             "is_public_visible": False
         }
     }
-    r = client.post("/users/register", json=payload)
+    r = client.post("/api/users/register", json=payload)
     assert r.status_code == 201, r.text
     data = r.json()
     assert set(data["roles"]) == set(roles)
@@ -168,7 +168,7 @@ def test_register_admin_maintainer_forbidden():
             "nickname": "非法角色",
             "roles": [role]
         }
-        r = client.post("/users/register", json=payload)
+        r = client.post("/api/users/register", json=payload)
         assert r.status_code in (400, 403)
 
 def test_profile_required_for_roles():
@@ -184,9 +184,9 @@ def test_profile_required_for_roles():
         "nickname": "无profile",
         "roles": ["volunteer"]
     }
-    r = client.post("/users/register", json=payload)
+    r = client.post("/api/users/register", json=payload)
     assert r.status_code in (400, 422)
     # 缺 expert_info
     payload["roles"] = ["expert"]
-    r2 = client.post("/users/register", json=payload)
+    r2 = client.post("/api/users/register", json=payload)
     assert r2.status_code in (400, 422)
