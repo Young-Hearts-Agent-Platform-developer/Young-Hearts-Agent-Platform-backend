@@ -239,3 +239,36 @@ def parse_and_clean_entry(entry: Union[str, bytes, Any]) -> List[Dict]:
     except Exception as e:
         logger.error(f"解析主流程异常: {e}")
         return [{"text": "[UNPARSEABLE]", "meta": {"error": True, "log": str(e)}}]
+
+
+def get_failed_entries(limit: int = 100, offset: int = 0) -> List[Dict]:
+    """
+    获取解析失败的文档条目（预留接口，实际应对接数据库/缓存/日志）。
+    :param limit: 返回条数
+    :param offset: 偏移量
+    :return: 失败条目列表，每项包含文档标识、失败原因、时间等
+    """
+    # TODO: 实现与实际存储的对接
+    return []
+
+
+def submit_manual_entry(entry_id: str, content: str, meta: Any = None) -> Dict:
+    """
+    人工补录解析失败的文档内容（预留接口）。
+    :param entry_id: 失败条目标识
+    :param content: 补录内容
+    :param meta: 额外元数据
+    :return: 处理结果
+    """
+    # TODO: 实现人工补录入库逻辑
+    return {"entry_id": entry_id, "status": "success", "msg": "补录已记录（模拟）"}
+
+
+def batch_parse_and_clean(entries: List[Any]) -> List[Dict]:
+    """
+    批量解析与清洗接口（预留，支持异步/批量处理）。
+    :param entries: 文件/URL/bytes 列表
+    :return: 结构化块列表
+    """
+    # TODO: 实现批量/异步处理逻辑
+    return [parse_and_clean_entry(e) for e in entries]

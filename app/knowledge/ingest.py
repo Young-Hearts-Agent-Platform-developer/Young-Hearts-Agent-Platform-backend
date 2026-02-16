@@ -1,3 +1,12 @@
+# 预留：人工审核流程对接
+def manual_review_failed_entries():
+    """
+    获取并处理解析失败的文档（预留接口，实际应对接管理后台/人工审核页面）。
+    """
+    from app.knowledge.clean_parse import get_failed_entries, submit_manual_entry
+    failed = get_failed_entries()
+    # TODO: 实现人工审核流程，如推送到管理后台、等待人工补录
+    return failed
 """Placeholder for knowledge ingestion utilities.
 
 Functions to add:
