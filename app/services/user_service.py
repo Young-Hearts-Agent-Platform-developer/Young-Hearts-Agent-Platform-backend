@@ -1,6 +1,4 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-
 from app.models.user import User
 
 

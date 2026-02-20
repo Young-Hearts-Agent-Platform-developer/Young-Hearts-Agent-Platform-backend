@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 
 from app.models import Base
 
+
 class ConsultationSession(Base):
     __tablename__ = "consultation_sessions"
     id = Column(BigInteger, primary_key=True, index=True)
@@ -14,6 +15,7 @@ class ConsultationSession(Base):
     is_archived = Column(Boolean, default=False)
 
     messages = relationship("ConsultationMessage", back_populates="session", lazy="noload")
+
 
 class ConsultationMessage(Base):
     __tablename__ = "consultation_messages"

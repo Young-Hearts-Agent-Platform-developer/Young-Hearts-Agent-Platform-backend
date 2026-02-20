@@ -5,7 +5,6 @@ from sqlalchemy.sql import func
 from app.models import Base
 
 
-
 # 用户主表
 class User(Base):
     __tablename__ = "users"

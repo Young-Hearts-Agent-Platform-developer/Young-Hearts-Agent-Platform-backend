@@ -19,7 +19,7 @@ def init_db():
     try:
         from app.models import Base
         Base.metadata.create_all(bind=engine)
-    except Exception as e:
+    except Exception:
         import traceback
         print("[init_db] Exception occurred while creating tables:")
         print(traceback.format_exc())

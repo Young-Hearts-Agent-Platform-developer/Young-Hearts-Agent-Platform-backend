@@ -1,13 +1,13 @@
 import sys
 import os
 from unittest.mock import MagicMock
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-
 from app.db.session import SessionLocal
 from app.services.consultation_service import ConsultationService
 from app.models.user import User
-import app.services.consultation_service # Patch target
+import app.services.consultation_service  # Patch target
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+
 
 def create_test_user(db):
     user = db.query(User).filter(User.username == "test_idempotency").first()
@@ -17,6 +17,7 @@ def create_test_user(db):
         db.commit()
         db.refresh(user)
     return user
+
 
 def run_test():
     print(">>> 开始验证 topic 生成幂等性 Test...")
@@ -40,7 +41,7 @@ def run_test():
         print("[Action] 第一次调用 save_ai_message_and_generate_topic (User query: 'Q1')...")
         service.save_ai_message_and_generate_topic(session_id, "AI response 1", "User query 1")
         
-        db.expire_all() # 强制刷新
+        db.expire_all()  # 强制刷新
         session = service.get_session(session_id)
         print(f"[Check 1] Current topic is: '{session.topic}'")
         
@@ -56,7 +57,7 @@ def run_test():
         print("[Action] 第二次调用 save_ai_message_and_generate_topic (User query: 'Q2')...")
         service.save_ai_message_and_generate_topic(session_id, "AI response 2", "User query 2")
         
-        db.expire_all() 
+        db.expire_all()
         session = service.get_session(session_id)
         print(f"[Check 2] Current topic is: '{session.topic}'")
         
@@ -74,6 +75,7 @@ def run_test():
         if 'original_generate_topic' in locals():
             app.services.consultation_service.generate_topic = original_generate_topic
         db.close()
+
 
 if __name__ == "__main__":
     run_test()

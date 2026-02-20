@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
-from fastapi.responses import StreamingResponse, JSONResponse
-from app.services.rag.service import async_chat_with_rag, save_ai_message
+from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi.responses import StreamingResponse
+from app.services.rag.service import async_chat_with_rag
 from app.services.auth import get_current_user
 from app.services.consultation_service import ConsultationService
 from app.db.session import get_db
-from app.schemas.consultation import ConsultationSessionCreate, ConsultationSession, ConsultationMessageCreate, ConsultationMessage
+from app.schemas.consultation import ConsultationSession, ConsultationMessage
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional, AsyncGenerator, List, Any
+from typing import Optional, AsyncGenerator, List
 import json
 
 router = APIRouter()
+
 
 class ChatRequest(BaseModel):
     query: str
@@ -19,11 +20,14 @@ class ChatRequest(BaseModel):
     session_id: Optional[int] = None
     # sources 字段不再由前端传递，仅后端持久化时预留
 
+
 class SessionCreateRequest(BaseModel):
     topic: Optional[str] = None
 
+
 def get_consult_service(db: Session = Depends(get_db)):
     return ConsultationService(db)
+
 
 # 创建会话
 @router.post("/sessions", response_model=ConsultationSession)
@@ -35,6 +39,7 @@ async def create_session(
     session = service.create_session(user_id=current_user.id, topic=req.topic or "")
     return session
 
+
 # 会话列表（仅返回最近20条，无分页）
 @router.get("/sessions", response_model=List[ConsultationSession])
 async def list_sessions(
@@ -42,6 +47,7 @@ async def list_sessions(
     service: ConsultationService = Depends(get_consult_service)
 ):
     return service.list_sessions_recent(user_id=current_user.id, roles=current_user.roles)
+
 
 # 会话详情（消息列表，分页）
 @router.get("/sessions/{session_id}", response_model=List[ConsultationMessage])
@@ -52,6 +58,7 @@ async def get_session_detail(
 ):
     return service.list_messages_all(session_id=session_id, user_id=current_user.id, roles=current_user.roles)
 
+
 # 删除会话
 @router.delete("/sessions/{session_id}")
 async def delete_session(
@@ -61,6 +68,7 @@ async def delete_session(
 ):
     service.delete_session(session_id=session_id, user_id=current_user.id, roles=current_user.roles)
     return {"msg": "deleted"}
+
 
 # 咨询对话（流式，支持 session_id，AI回复持久化）
 @router.post("/chat")

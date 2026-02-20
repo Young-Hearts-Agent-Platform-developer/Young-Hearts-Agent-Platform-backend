@@ -3,7 +3,7 @@
 Combines retrieval results with an LLM client (to be implemented).
 """
 
-from typing import List, Dict
+from typing import Dict
 
 from app.services.knowledge.retriever import retrieve
 

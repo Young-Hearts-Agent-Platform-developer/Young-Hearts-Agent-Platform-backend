@@ -1,5 +1,3 @@
-
-
 # 功能测试脚本：AI对话流式输出及自动生成标题（方法直调版）
 # 说明：本脚本直接调用后端方法（不走API），覆盖会话创建、AI流式回复、topic生成等主流程与关键边界情况。
 # 依赖：标准库+SQLAlchemy+langchain-openai等，需本地配置好数据库和ARK_API_KEY。
@@ -7,15 +5,18 @@
 import asyncio
 import sys
 import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 from app.db.session import SessionLocal, init_db
 from app.models.user import User
 from app.services.consultation_service import ConsultationService
-from app.rag.service import async_chat_with_rag
+from app.services.rag.service import async_chat_with_rag
+
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+
 
 def print_divider(title):
-    print("\n" + "="*10 + f" {title} " + "="*10)
+    print("\n" + "=" * 10 + f" {title} " + "=" * 10)
+
 
 def create_test_user(db):
     # 若已存在则复用
@@ -28,6 +29,7 @@ def create_test_user(db):
     db.refresh(user)
     return user
 
+
 def create_session(service, user_id, topic=""):
     session = service.create_session(user_id=user_id, topic=topic)
     # session.id 可能为 SQLAlchemy Column，需要取实际值
@@ -38,6 +40,7 @@ def create_session(service, user_id, topic=""):
     print(f"[Session] 新会话创建成功，session_id={session_id}")
     return session_id
 
+
 async def stream_chat_print(query, role, reasoning_effort=None):
     print("[Stream] AI回复流式输出：")
     ai_reply = ""
@@ -47,9 +50,11 @@ async def stream_chat_print(query, role, reasoning_effort=None):
     print()
     return ai_reply
 
+
 def get_session_topic(service, session_id):
     session = service.get_session(session_id)
     return getattr(session, "topic", None)
+
 
 if __name__ == "__main__":
     print_divider("AI对话流式输出主流程（方法直调）")

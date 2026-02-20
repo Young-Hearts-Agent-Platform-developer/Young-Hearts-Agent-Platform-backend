@@ -2,13 +2,11 @@
 from typing import List, Optional, Any
 from sqlalchemy.orm import Session
 from app.models.consultation import ConsultationSession, ConsultationMessage
-from app.schemas.consultation import ConsultationSessionCreate, ConsultationMessageCreate
-from app.models.user import User
-from app.db.session import get_db
 from sqlalchemy import desc
 from fastapi import HTTPException
 from app.services.auth import is_admin
 from app.services.rag.service import generate_topic
+
 
 class ConsultationService:
     def __init__(self, db: Session):
@@ -71,7 +69,7 @@ class ConsultationService:
             topic_value = current_topic
         else:
             topic_value = None
-        
+
         # 判断是否首次生成 topic (幂等性检查)
         if (topic_value is None) or (topic_value == "新对话"):
             try:
@@ -95,7 +93,7 @@ class ConsultationService:
                 # 原子更新：仅当数据库中 topic 仍为空或“新对话”时更新，防止并发覆盖
                 result = self.db.query(ConsultationSession).filter(
                     ConsultationSession.id == session_id,
-                    (ConsultationSession.topic == None) | (ConsultationSession.topic == "新对话")
+                    (ConsultationSession.topic == None) | (ConsultationSession.topic == "新对话")  # noqa: E711
                 ).update({"topic": new_topic}, synchronize_session=False)
 
                 if result > 0:
@@ -117,7 +115,7 @@ class ConsultationService:
         return message
 
     def list_messages_all(self, session_id: int, user_id: int, roles: List[str]) -> List[ConsultationMessage]:
-        session = self.get_session_detail(session_id, user_id, roles)
+        _ = self.get_session_detail(session_id, user_id, roles)
         query = self.db.query(ConsultationMessage).filter(ConsultationMessage.session_id == session_id)
         query = query.order_by(desc(ConsultationMessage.created_at))
         return query.all()

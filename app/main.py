@@ -10,7 +10,6 @@ from app.api.v1.routes import consult as consult_router
 from app.utils.utils_openapi import generate_openapi_json
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # initialize DB / indexes if needed
@@ -18,7 +17,6 @@ async def lifespan(app: FastAPI):
     # 生成 openapi.json
     generate_openapi_json(app, output_path="openapi.json")
     yield
-
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)

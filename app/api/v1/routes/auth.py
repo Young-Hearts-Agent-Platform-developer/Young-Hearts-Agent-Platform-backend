@@ -1,11 +1,11 @@
 
 from fastapi import APIRouter, Request, Response, status, HTTPException, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
-from app.schemas.user import UserLogin, UserOut, UserUpdate
+from app.schemas.user import UserLogin, UserOut, UserUpdate, UserRegisterRequest
 from app.services import auth as auth_service
-from app.services.user_service import get_user_by_username, update_user, delete_user
+from app.services import user_service
+from app.services.user_service import update_user, delete_user
 from app.services.auth import get_current_user, require_roles
 
 router = APIRouter()
@@ -74,9 +74,6 @@ async def logout(request: Request, response: Response):
 
 
 # 分角色注册接口：支持多角色、profile 创建、详细返回
-from app.services import user_service
-from app.schemas.user import UserRegisterRequest
-
 @router.post("/register", response_model=UserOut)
 async def register(user_in: UserRegisterRequest):
     """
@@ -133,7 +130,7 @@ async def register(user_in: UserRegisterRequest):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"注册失败: {e}")
-    
+
     # 构造返回
     from app.schemas.user import UserOut, VolunteerProfileOut, ExpertProfileOut
     # 用 dict 构造，避免 from_orm
