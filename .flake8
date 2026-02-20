@@ -1,0 +1,14 @@
+[flake8]
+exclude = .github, .pytest_cache, .vscode, .venv, __pycache__, docs, deployment
+# Ignored error codes (adjust according to team standards)
+# E501: Line too long (handled by black)
+# W503: Line break before binary operator
+# D100: Missing docstring in public module
+ignore = E501, W503, D100
+max-line-length = 120
+max-complexity = 10
+# Show source code and statistics
+show-source = True
+statistics = True
+# Enabled extensions (if plugins like flake8-docstrings are installed)
+enable-extensions = D, ANN
