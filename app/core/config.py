@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+ 
 
 
 class Settings(BaseSettings):
@@ -22,8 +23,9 @@ class Settings(BaseSettings):
     ark_base_url: str | None = None
     ark_model: str | None = None
 
-    class Config:
-        env_file = ".env"
+    model_config = {
+        "env_file": ".env"
+    }
 
 
 settings = Settings()
