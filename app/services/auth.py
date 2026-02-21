@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from typing import cast
 
@@ -9,7 +10,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.services.user_service import get_user_by_username, get_user_by_id
+from app.services.user_service import get_user_by_username
 from app.db.session import get_db
 from app.models.user import Session as SessionModel, User
 import secrets
@@ -37,9 +38,20 @@ def authenticate_user(db: Session, username: str, password: str):
     return user
 
 
+# 管理员判定：roles 可为 list[str] 或 JSON 字符串，包含 'admin' 即为管理员
+def is_admin(roles):
+    if isinstance(roles, str):
+        try:
+            roles = json.loads(roles)
+        except Exception:
+            return False
+    return isinstance(roles, list) and 'admin' in roles
+
+
 # 权限装饰器：校验 current_user.roles
 def require_roles(roles):
     import json
+    
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
@@ -61,6 +73,7 @@ def require_roles(roles):
             return await func(*args, **kwargs)
         return wrapper
     return decorator
+
 
 # 登录：生成 session_id 并写入 session 表
 async def login(user_in, request: Request):
@@ -89,6 +102,7 @@ async def login(user_in, request: Request):
     user_out = UserOut.model_validate(user)
     return user_out, session_id
 
+
 # 登出：清理 session 表记录，支持 Cookie/Header
 async def logout(request: Request):
     db: Session = next(get_db())
@@ -100,6 +114,7 @@ async def logout(request: Request):
     if session_id:
         db.query(SessionModel).filter(SessionModel.session_id == session_id).delete()
         db.commit()
+
 
 # 注册：字段与校验对齐 API 设计
 async def register(user_in):
@@ -121,8 +136,9 @@ async def register(user_in):
     db.refresh(user)
     return user
 
+
 # 自动识别 Cookie/Header，查 session 表，注入 user
-def get_current_user_from_context(request: Request, db: Session = Depends(get_db)):
+def get_current_user(request: Request, db: Session = Depends(get_db)):
     session_id = None
     # 优先 Cookie
     if settings.SESSION_COOKIE_NAME in request.cookies:

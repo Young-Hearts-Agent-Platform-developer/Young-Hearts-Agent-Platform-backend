@@ -3,9 +3,9 @@
 Combines retrieval results with an LLM client (to be implemented).
 """
 
-from typing import List, Dict
+from typing import Dict
 
-from app.knowledge.retriever import retrieve
+from app.services.knowledge.retriever import retrieve
 
 
 def answer_query(query: str, top_k: int = 3) -> Dict:

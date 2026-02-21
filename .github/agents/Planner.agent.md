@@ -3,8 +3,7 @@ name: Planner
 description: 技术方案设计专家 — 基于研究报告支持生成新计划或更新现有计划（含版本记录），指导 Implementer 执行。
 argument-hint: 必需 "研究报告路径"。若为 "更新模式"，请确保已打开或引用现有的计划文件。
 tools:
-  ['read', 'edit', 'search', 'todo']
-infer: false
+  ['read', 'edit', 'search', 'web', 'todo']
 handoffs:
   - label: 进入执行阶段 (Implementer)
     agent: Implementer
@@ -65,7 +64,7 @@ handoffs:
 - **头部信息**：`# [功能名称] 实现计划`，关联研究路径。
 - **Phase 结构**：目标、修改文件清单（表格）、具体变更片段（Diff 风格）、成功标准（自动+手动）。
 - **PR 就绪**：提供 commit message 模板与 PR 描述要点。
-- **版本控制**：文档末尾必须包含版本记录表格。
+- **版本控制**：文档开始必须包含版本记录表格。
 
 ## 交互模板（推荐用以快速响应）
 
