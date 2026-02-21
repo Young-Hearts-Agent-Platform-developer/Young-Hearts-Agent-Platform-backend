@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
+
 
 class KnowledgeItemBase(BaseModel):
     title: str
@@ -9,8 +10,10 @@ class KnowledgeItemBase(BaseModel):
     tags: Optional[List[str]] = []
     category: Optional[str] = None
 
+
 class KnowledgeItemCreate(KnowledgeItemBase):
-    status: Optional[str] = "draft" # 允许直接提交为 pending_review
+    status: Optional[str] = "draft"  # 允许直接提交为 pending_review
+
 
 class KnowledgeItemUpdate(BaseModel):
     title: Optional[str] = None
@@ -20,9 +23,11 @@ class KnowledgeItemUpdate(BaseModel):
     category: Optional[str] = None
     status: Optional[str] = None
 
+
 class KnowledgeItemAudit(BaseModel):
     status: str = Field(..., pattern="^(published|rejected)$")
     review_comments: Optional[str] = None
+
 
 class KnowledgeItemResponse(KnowledgeItemBase):
     id: int
@@ -34,8 +39,8 @@ class KnowledgeItemResponse(KnowledgeItemBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class KnowledgeItemListResponse(BaseModel):
     total: int

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, BigInteger, String, Text, JSON, DateTime
 from sqlalchemy.sql import func
 from app.models import Base
 
+
 class KnowledgeItem(Base):
     __tablename__ = "knowledge_items"
 
@@ -12,13 +13,14 @@ class KnowledgeItem(Base):
     tags = Column(JSON, default=list)
     category = Column(String(100))
     author_id = Column(BigInteger, ForeignKey("users.id"))
-    status = Column(String(32), default="draft") # draft, pending_review, published, rejected, archived
+    status = Column(String(32), default="draft")  # draft, pending_review, published, rejected, archived
     review_comments = Column(Text)
     reviewed_by = Column(BigInteger, ForeignKey("users.id"))
     reviewed_at = Column(DateTime)
     is_deleted = Column(Boolean, default=False, comment="软删除标记")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
 
 class KnowledgeChunk(Base):
     __tablename__ = "knowledge_chunks"
