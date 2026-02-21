@@ -18,8 +18,8 @@ router = APIRouter()
 @require_roles(["user", "family", "volunteer", "expert", "admin"])
 async def read_users_me(current_user=Depends(get_current_user)):
     # 敏感字段按角色脱敏示例
-    if hasattr(current_user, 'dict'):
-        user_dict = current_user.dict()
+    if hasattr(current_user, 'model_dump'):
+        user_dict = current_user.model_dump()
     elif hasattr(current_user, '__dict__'):
         user_dict = vars(current_user)
     else:
@@ -34,7 +34,7 @@ async def read_users_me(current_user=Depends(get_current_user)):
 @router.put("/me", response_model=UserOut)
 @require_roles(["user", "family", "admin"])
 async def update_me(payload: UserUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    data = payload.dict(exclude_unset=True)
+    data = payload.model_dump(exclude_unset=True)
     if "password" in data:
         data.pop("password")
     user = update_user(db, current_user, data)

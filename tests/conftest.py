@@ -21,8 +21,8 @@ def client():
 
 @pytest.fixture(scope="session")
 def normal_user(db: Session):
-    username = "testuser"
-    password = "password123"
+    username = "12345"
+    password = "12345"
     user = db.query(User).filter_by(username=username).first()
     if not user:
         user_in = UserRegisterRequest(
@@ -36,8 +36,8 @@ def normal_user(db: Session):
 
 @pytest.fixture(scope="session")
 def admin_user(db: Session):
-    username = "adminuser"
-    password = "adminpass123"
+    username = "123456"
+    password = "123456"
     user = db.query(User).filter_by(username=username).first()
     if not user:
         user_in = UserRegisterRequest(
@@ -51,12 +51,28 @@ def admin_user(db: Session):
 
 @pytest.fixture(scope="session")
 def normal_user_token(client, normal_user):
-    resp = client.post("/api/v1/auth/login", json=normal_user)
+    resp = client.post("/api/auth/login", json=normal_user)
     assert resp.status_code == 200
-    return resp.cookies
+    session_id = resp.json()["session_id"]
+    return {"Cookie": f"session_id={session_id}"}
 
 @pytest.fixture(scope="session")
 def admin_token(client, admin_user):
-    resp = client.post("/api/v1/auth/login", json=admin_user)
+    resp = client.post("/api/auth/login", json=admin_user)
     assert resp.status_code == 200
-    return resp.cookies
+    session_id = resp.json()["session_id"]
+    return {"Cookie": f"session_id={session_id}"}
+
+@pytest.fixture(scope="session")
+def existing_user_1_token(client):
+    resp = client.post("/api/auth/login", json={"username": "123456", "password": "123456"})
+    assert resp.status_code == 200
+    session_id = resp.json()["session_id"]
+    return {"Cookie": f"session_id={session_id}"}
+
+@pytest.fixture(scope="session")
+def existing_user_2_token(client):
+    resp = client.post("/api/auth/login", json={"username": "12345", "password": "12345"})
+    assert resp.status_code == 200
+    session_id = resp.json()["session_id"]
+    return {"Cookie": f"session_id={session_id}"}
