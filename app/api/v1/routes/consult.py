@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from fastapi.responses import StreamingResponse
-from app.services.rag.service import async_chat_with_rag
-from app.services.auth import get_current_user
+from app.services.rag.rag_service import async_chat_with_rag
+from app.services.auth_service import get_current_user
 from app.services.consultation_service import ConsultationService
 from app.db.session import get_db
 from app.schemas.consultation import ConsultationSession, ConsultationMessage

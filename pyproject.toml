@@ -11,6 +11,7 @@ dependencies = [
     "httpx>=0.28.1",
     "langchain>=1.2.6",
     "langchain-openai>=1.1.7",
+    "openai>=2.15.0",
     "passlib==1.7.4",
     "pydantic==2.12.5",
     "pydantic_settings==2.12.0",
