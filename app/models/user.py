@@ -1,7 +1,8 @@
+
 from sqlalchemy import Column, BigInteger, String, Boolean, DateTime, JSON, ForeignKeyConstraint
 from sqlalchemy.sql import func
-from app.models import Base
 
+from app.models import Base
 
 
 # 用户主表

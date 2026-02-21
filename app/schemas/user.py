@@ -1,5 +1,5 @@
-from typing import Optional, List, Literal, Union
-from pydantic import BaseModel, model_validator, field_validator
+from typing import Optional, List, Literal
+from pydantic import BaseModel, model_validator, field_validator, ConfigDict
 from datetime import datetime
 import json
 
@@ -74,16 +74,14 @@ class VolunteerProfileOut(VolunteerProfileCreate):
     status: Optional[str] = "pending"
     work_status: Optional[str] = "offline"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExpertProfileOut(ExpertProfileCreate):
     user_id: int
     status: Optional[str] = "pending"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserOut(UserBase):
@@ -91,8 +89,7 @@ class UserOut(UserBase):
     volunteer_profile: Optional[VolunteerProfileOut] = None
     expert_profile: Optional[ExpertProfileOut] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @field_validator("roles", mode="before")
     @classmethod
@@ -101,6 +98,11 @@ class UserOut(UserBase):
         if isinstance(v, str):
             return json.loads(v)
         return v
+
+
+class LoginResponse(BaseModel):
+    user: UserOut
+    session_id: str
 
 
 # Session Pydantic 模型
@@ -121,8 +123,7 @@ class SessionCreate(BaseModel):
 
 
 class SessionOut(SessionBase):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdate(BaseModel):

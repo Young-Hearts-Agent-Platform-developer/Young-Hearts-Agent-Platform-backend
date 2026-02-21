@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-
+ 
 
 class Settings(BaseSettings):
     APP_NAME: str = "心青年智能体平台 - Backend"
@@ -17,8 +17,14 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SECURE: bool = False
     SESSION_EXPIRE_MINUTES: int = 60 * 24  # 默认 24 小时
 
-    class Config:
-        env_file = ".env"
+    # ark api key
+    ark_api_key: str | None = None
+    ark_base_url: str | None = None
+    ark_model: str | None = None
+
+    model_config = {
+        "env_file": ".env"
+    }
 
 
 settings = Settings()

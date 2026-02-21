@@ -1,12 +1,12 @@
 
 from fastapi import APIRouter, Request, Response, status, HTTPException, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
-from app.schemas.user import UserLogin, UserOut, UserUpdate
+from app.schemas.user import UserLogin, UserOut, UserUpdate, UserRegisterRequest, LoginResponse
 from app.services import auth as auth_service
-from app.services.user_service import get_user_by_username, update_user, delete_user
-from app.services.auth import get_current_user_from_context as get_current_user, require_roles
+from app.services import user_service
+from app.services.user_service import update_user, delete_user
+from app.services.auth import get_current_user, require_roles
 
 router = APIRouter()
 
@@ -18,8 +18,8 @@ router = APIRouter()
 @require_roles(["user", "family", "volunteer", "expert", "admin"])
 async def read_users_me(current_user=Depends(get_current_user)):
     # 敏感字段按角色脱敏示例
-    if hasattr(current_user, 'dict'):
-        user_dict = current_user.dict()
+    if hasattr(current_user, 'model_dump'):
+        user_dict = current_user.model_dump()
     elif hasattr(current_user, '__dict__'):
         user_dict = vars(current_user)
     else:
@@ -34,7 +34,7 @@ async def read_users_me(current_user=Depends(get_current_user)):
 @router.put("/me", response_model=UserOut)
 @require_roles(["user", "family", "admin"])
 async def update_me(payload: UserUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    data = payload.dict(exclude_unset=True)
+    data = payload.model_dump(exclude_unset=True)
     if "password" in data:
         data.pop("password")
     user = update_user(db, current_user, data)
@@ -50,16 +50,15 @@ async def delete_me(db: Session = Depends(get_db), current_user=Depends(get_curr
 
 
 # 登录接口：成功后写 session 表，Web 端 set_cookie，App 端返回 session_id
-@router.post("/login", response_model=UserOut)
+@router.post("/login", response_model=LoginResponse)
 async def login(user_in: UserLogin, response: Response, request: Request):
     user, session_id = await auth_service.login(user_in, request)
     user_agent = request.headers.get("user-agent", "")
     # 简单判断：web端用cookie，app端返回session_id
     if "web" in user_agent.lower():
-        response.set_cookie(key="session_id", value=session_id, httponly=True)
-        return user
-    else:
-        return {"user": user, "session_id": session_id}
+        # 使用 SameSite=None 时需要同时设置 Secure=True（现代浏览器要求）
+        response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="none", secure=True)
+    return LoginResponse(user=user, session_id=session_id)
 
 
 # 登出接口：清理 session 表记录，清除 Cookie/Header
@@ -73,9 +72,6 @@ async def logout(request: Request, response: Response):
 
 
 # 分角色注册接口：支持多角色、profile 创建、详细返回
-from app.services import user_service
-from app.schemas.user import UserRegisterRequest
-
 @router.post("/register", response_model=UserOut)
 async def register(user_in: UserRegisterRequest):
     """
@@ -132,7 +128,7 @@ async def register(user_in: UserRegisterRequest):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"注册失败: {e}")
-    
+
     # 构造返回
     from app.schemas.user import UserOut, VolunteerProfileOut, ExpertProfileOut
     # 用 dict 构造，避免 from_orm

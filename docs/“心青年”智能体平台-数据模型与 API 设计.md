@@ -249,6 +249,7 @@
 | POST | `/api/consult/sessions` | 创建新会话 | Any |
 | GET | `/api/consult/sessions` | 获取历史会话列表 | Any |
 | GET | `/api/consult/sessions/:id` | 获取会话消息详情 | Any |
+| DELETE | `/api/consult/sessions/:id` | 删除会话 | Any |
 
 ### 2.5 工单系统 (Tickets)
 
