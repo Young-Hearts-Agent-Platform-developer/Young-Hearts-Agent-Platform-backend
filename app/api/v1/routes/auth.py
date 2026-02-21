@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Request, Response, status, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserLogin, UserOut, UserUpdate, UserRegisterRequest
+from app.schemas.user import UserLogin, UserOut, UserUpdate, UserRegisterRequest, LoginResponse
 from app.services import auth as auth_service
 from app.services import user_service
 from app.services.user_service import update_user, delete_user
@@ -50,7 +50,7 @@ async def delete_me(db: Session = Depends(get_db), current_user=Depends(get_curr
 
 
 # 登录接口：成功后写 session 表，Web 端 set_cookie，App 端返回 session_id
-@router.post("/login", response_model=UserOut)
+@router.post("/login", response_model=LoginResponse)
 async def login(user_in: UserLogin, response: Response, request: Request):
     user, session_id = await auth_service.login(user_in, request)
     user_agent = request.headers.get("user-agent", "")
@@ -58,9 +58,7 @@ async def login(user_in: UserLogin, response: Response, request: Request):
     if "web" in user_agent.lower():
         # 使用 SameSite=None 时需要同时设置 Secure=True（现代浏览器要求）
         response.set_cookie(key="session_id", value=session_id, httponly=True, samesite="none", secure=True)
-        return user
-    else:
-        return {"user": user, "session_id": session_id}
+    return LoginResponse(user=user, session_id=session_id)
 
 
 # 登出接口：清理 session 表记录，清除 Cookie/Header

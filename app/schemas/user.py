@@ -100,6 +100,11 @@ class UserOut(UserBase):
         return v
 
 
+class LoginResponse(BaseModel):
+    user: UserOut
+    session_id: str
+
+
 # Session Pydantic 模型
 class SessionBase(BaseModel):
     session_id: str

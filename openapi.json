@@ -100,7 +100,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserOut"
+                  "$ref": "#/components/schemas/LoginResponse"
                 }
               }
             }
@@ -690,6 +690,23 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LoginResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "session_id"
+        ],
+        "title": "LoginResponse"
       },
       "SessionCreateRequest": {
         "properties": {
