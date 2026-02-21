@@ -1,6 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
-import json
+
 
 def test_consultation_isolation(client: TestClient, existing_user_1_token, existing_user_2_token, admin_token):
     # 用户 A (existing_user_1) 创建会话 S1
@@ -23,6 +22,7 @@ def test_consultation_isolation(client: TestClient, existing_user_1_token, exist
     # 管理员获取 S1 详情，应返回 200
     resp_detail_admin = client.get(f"/api/consult/sessions/{session_a_id}", headers=admin_token)
     assert resp_detail_admin.status_code == 200
+
 
 def test_consultation_chat_sse(client: TestClient, existing_user_1_token):
     # 创建一个新会话

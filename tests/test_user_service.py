@@ -1,5 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
+
 
 def test_update_me_success(client: TestClient, normal_user_token):
     # 尝试修改 email 和 gender
@@ -19,6 +19,7 @@ def test_update_me_success(client: TestClient, normal_user_token):
     data_get = response_get.json()
     assert data_get["email"] == "newemail@example.com"
     assert data_get["gender"] == "male"
+
 
 def test_update_me_restricted_fields(client: TestClient, normal_user_token):
     # 尝试修改 password 和 roles
