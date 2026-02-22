@@ -43,17 +43,18 @@ def expert_roles():
     return ["expert"]
 
 
-@pytest.mark.parametrize("title,content", [
-    ("知识标题1", "知识内容1"),
-    ("知识标题2", "知识内容2")
+@pytest.mark.parametrize("title,content,risk_level", [
+    ("知识标题1", "知识内容1", "low"),
+    ("知识标题2", "知识内容2", "high")
 ])
-def test_create_and_get_item(service, db_session, user_id, title, content):
-    data = KnowledgeItemCreate(title=title, content=content)
+def test_create_and_get_item(service, db_session, user_id, title, content, risk_level):
+    data = KnowledgeItemCreate(title=title, content=content, risk_level=risk_level)
     item = service.create_item(user_id=user_id, data=data)
     assert item.id > 0
     fetched = service.get_item(item.id)
     assert fetched.title == title
     assert fetched.content == content
+    assert fetched.risk_level == risk_level
 
 
 def test_get_nonexistent_item(service, db_session):

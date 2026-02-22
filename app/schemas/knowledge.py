@@ -9,6 +9,10 @@ class KnowledgeItemBase(BaseModel):
     content: str
     tags: Optional[List[str]] = []
     category: Optional[str] = None
+    risk_level: Optional[str] = Field(default="low", description="风险等级: high, medium, low")
+    document_type: Optional[str] = Field(default=None, description="文档类型/证据等级")
+    target_audience: Optional[List[str]] = Field(default=None, description="适用人群")
+    applicable_age: Optional[List[str]] = Field(default=None, description="适用年龄")
 
 
 class KnowledgeItemCreate(KnowledgeItemBase):
@@ -21,6 +25,10 @@ class KnowledgeItemUpdate(BaseModel):
     content: Optional[str] = None
     tags: Optional[List[str]] = None
     category: Optional[str] = None
+    risk_level: Optional[str] = None
+    document_type: Optional[str] = None
+    target_audience: Optional[List[str]] = None
+    applicable_age: Optional[List[str]] = None
     status: Optional[str] = None
 
 
