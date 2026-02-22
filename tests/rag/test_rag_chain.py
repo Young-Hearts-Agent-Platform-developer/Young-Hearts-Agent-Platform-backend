@@ -16,8 +16,9 @@ def test_retrieve_context_below_threshold(mock_get_retriever):
         (Document(page_content="test"), 0.5)
     ]
     
-    context = retrieve_context("test query", similarity_threshold=0.6)
+    context, sources = retrieve_context("test query", similarity_threshold=0.6)
     assert context is None
+    assert sources == []
 
 @patch("app.services.rag.chains.rag_chain.get_retriever")
 def test_retrieve_context_above_threshold(mock_get_retriever):
@@ -40,10 +41,12 @@ def test_retrieve_context_above_threshold(mock_get_retriever):
         Document(page_content="parent chunk", metadata={"title": "Test Doc", "page": "1"})
     ]
     
-    context = retrieve_context("test query", similarity_threshold=0.6)
+    context, sources = retrieve_context("test query", similarity_threshold=0.6)
     assert context is not None
     assert "【来源1】: Test Doc (位置: 1)" in context
     assert "parent chunk" in context
+    assert len(sources) == 1
+    assert sources[0]["title"] == "Test Doc"
 
 @patch("app.services.rag.chains.rag_chain.get_retriever")
 def test_retrieve_context_fallback_to_similarity_search_with_score(mock_get_retriever):
@@ -69,7 +72,9 @@ def test_retrieve_context_fallback_to_similarity_search_with_score(mock_get_retr
         Document(page_content="parent chunk", metadata={"title": "Test Doc", "page": "1"})
     ]
     
-    context = retrieve_context("test query", similarity_threshold=0.6)
+    context, sources = retrieve_context("test query", similarity_threshold=0.6)
     assert context is not None
     assert "【来源1】: Test Doc (位置: 1)" in context
     assert "parent chunk" in context
+    assert len(sources) == 1
+    assert sources[0]["title"] == "Test Doc"

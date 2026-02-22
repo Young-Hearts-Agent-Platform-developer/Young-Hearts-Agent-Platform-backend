@@ -71,9 +71,12 @@ def generate_topic(user_message: str, ai_message: str) -> str:
     return str(result).strip()
 
 
-async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[str] = None) -> AsyncGenerator[str, None]:
+async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[str] = None, sources_out: Optional[list] = None) -> AsyncGenerator[str, None]:
     # 1. 检索上下文
-    context = await asyncio.to_thread(retrieve_context, query)
+    context, sources = await asyncio.to_thread(retrieve_context, query)
+    if sources_out is not None:
+        sources_out.extend(sources)
+        
     if not context:
         yield "暂无相关信息，建议转人工咨询。"
         return

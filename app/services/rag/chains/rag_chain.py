@@ -41,10 +41,10 @@ def get_retriever():
     )
     return retriever
 
-def retrieve_context(query: str, similarity_threshold: float = 0.6, top_k: int = 4) -> Optional[str]:
+def retrieve_context(query: str, similarity_threshold: float = 0.6, top_k: int = 4) -> Tuple[Optional[str], List[dict]]:
     """
     检索相关文档片段，并组装上下文。
-    如果最高相似度低于阈值，返回 None。
+    如果最高相似度低于阈值，返回 None, []。
     """
     retriever = get_retriever()
     vectorstore = retriever.vectorstore
@@ -61,12 +61,12 @@ def retrieve_context(query: str, similarity_threshold: float = 0.6, top_k: int =
         docs_and_scores = [(doc, max(0.0, 1.0 - score / 2.0)) for doc, score in docs_and_scores]
     
     if not docs_and_scores:
-        return None
+        return None, []
         
     # 2. 检查最高相似度是否达到阈值
     highest_score = docs_and_scores[0][1]
     if highest_score < similarity_threshold:
-        return None
+        return None, []
         
     # 3. 获取满足阈值的子块
     valid_docs = [doc for doc, score in docs_and_scores if score >= similarity_threshold]
@@ -87,12 +87,19 @@ def retrieve_context(query: str, similarity_threshold: float = 0.6, top_k: int =
     if not retrieved_docs:
         retrieved_docs = valid_docs
     
-    # 5. 组装上下文
+    # 5. 组装上下文和来源
     context_parts = []
+    sources = []
     for i, doc in enumerate(retrieved_docs):
-        source = doc.metadata.get("title", "未知来源")
+        source_title = doc.metadata.get("title", "未知来源")
         page = doc.metadata.get("page", "未知位置")
         content = doc.page_content
-        context_parts.append(f"【来源{i+1}】: {source} (位置: {page})\n{content}")
+        context_parts.append(f"【来源{i+1}】: {source_title} (位置: {page})\n{content}")
+        sources.append({
+            "title": source_title,
+            "page": page,
+            "content": content[:200] + "..." if len(content) > 200 else content,
+            "metadata": doc.metadata
+        })
         
-    return "\n\n".join(context_parts)
+    return "\n\n".join(context_parts), sources

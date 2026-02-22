@@ -91,6 +91,8 @@ def process_knowledge_document(doc_id: int):
         
         # 5. 根据风险等级进行切片和入库
         risk_level = str(doc_risk_level) if doc_risk_level else "low"
+        from app.models.knowledge import KnowledgeChunk
+        
         if risk_level == "medium":
             # 中风险：使用 ParentDocumentRetriever 逻辑
             # 存储父文档的 Store
@@ -129,13 +131,64 @@ def process_knowledge_document(doc_id: int):
             # ParentDocumentRetriever 会自动调用 parent 和 child splitter，并将子块存入 Chroma，父块存入 Store
             from langchain_core.documents import Document
             full_doc = Document(page_content=parsed_content, metadata=metadata)
-            retriever.add_documents([full_doc], ids=None)
+            
+            # 手动调用 _split_docs_for_adding 以获取切片和 ID
+            docs, full_docs = retriever._split_docs_for_adding([full_doc])
+            
+            # 存入 ChromaDB 和 Store
+            child_ids = vectorstore.add_documents(docs)
+            store.mset(full_docs)
+            
+            # 持久化到 MySQL
+            parent_id_map = {} # UUID -> MySQL ID
+            
+            # 1. 保存父切片
+            for seq, (parent_uuid, parent_doc) in enumerate(full_docs):
+                parent_chunk = KnowledgeChunk(
+                    item_id=doc.id,
+                    chunk_type="parent",
+                    content_chunk=parent_doc.page_content,
+                    chunk_metadata=parent_doc.metadata,
+                    vector_id=parent_uuid, # 父切片的 vector_id 存 UUID
+                    sequence=seq
+                )
+                db.add(parent_chunk)
+                db.flush() # 获取自增 ID
+                parent_id_map[parent_uuid] = parent_chunk.id
+                
+            # 2. 保存子切片
+            for seq, (child_doc, child_id) in enumerate(zip(docs, child_ids)):
+                parent_uuid = child_doc.metadata.get(retriever.id_key)
+                parent_mysql_id = parent_id_map.get(parent_uuid)
+                
+                child_chunk = KnowledgeChunk(
+                    item_id=doc.id,
+                    parent_id=parent_mysql_id,
+                    chunk_type="child",
+                    content_chunk=child_doc.page_content,
+                    chunk_metadata=child_doc.metadata,
+                    vector_id=child_id,
+                    sequence=seq
+                )
+                db.add(child_chunk)
             
         else:
             # 高/低风险：直接切片并存入 ChromaDB
             chunks = CustomSplitter.split_document(parsed_content, risk_level, metadata)
             if chunks:
-                vectorstore.add_documents(chunks)
+                chunk_ids = vectorstore.add_documents(chunks)
+                
+                # 持久化到 MySQL
+                for seq, (chunk, chunk_id) in enumerate(zip(chunks, chunk_ids)):
+                    db_chunk = KnowledgeChunk(
+                        item_id=doc.id,
+                        chunk_type="independent",
+                        content_chunk=chunk.page_content,
+                        chunk_metadata=chunk.metadata,
+                        vector_id=chunk_id,
+                        sequence=seq
+                    )
+                    db.add(db_chunk)
         
         # 6. 更新状态为已发布
         setattr(doc, "status", "published")

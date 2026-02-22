@@ -118,13 +118,14 @@ async def consult_chat(
         user_first_query = req.query
         error_flag = False
         error_msg = ""
+        sources_out = []
         # session_id 缺失，直接返回 error 和 done
         if not req.session_id:
             yield _format_sse("error", {"detail": "session_id missing"})
             yield _format_sse("done", "[DONE]")
             return
         try:
-            async for chunk in async_chat_with_rag(req.query, req.role, req.reasoning_effort):
+            async for chunk in async_chat_with_rag(req.query, req.role, req.reasoning_effort, sources_out):
                 ai_reply += chunk
                 yield _format_sse("message", chunk)
         except Exception as e:
@@ -145,7 +146,7 @@ async def consult_chat(
                     session_id=req.session_id,
                     ai_content=ai_reply,
                     user_content=user_first_query,
-                    sources=None
+                    sources=json.dumps(sources_out, ensure_ascii=False) if sources_out else None
                 )
                 break
             except Exception as ex:
@@ -160,5 +161,7 @@ async def consult_chat(
         topic = getattr(session, "topic", None)
         # 尾包带上 topic 信息 和 done
         yield _format_sse("topic", {"topic": topic})
+        if sources_out:
+            yield _format_sse("sources", sources_out)
         yield _format_sse("done", "[DONE]")
     return StreamingResponse(event_stream(), media_type="text/event-stream")
