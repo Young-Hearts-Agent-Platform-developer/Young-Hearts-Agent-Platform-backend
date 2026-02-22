@@ -34,6 +34,10 @@ def normal_user(db: Session):
             roles=["family"]
         )
         user = create_user(db, user_in)
+    else:
+        import json
+        setattr(user, "roles", json.dumps(["family"]))
+        db.add(user)
     db.commit()
     return {"username": username, "password": password}
 
