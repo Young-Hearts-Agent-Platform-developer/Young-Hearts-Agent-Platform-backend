@@ -6,6 +6,15 @@ class Settings(BaseSettings):
     DB_URL: str = "sqlite:///./dev.db"
     VECTOR_STORE: str = "chroma"
 
+    # ChromaDB 配置
+    CHROMADB_HOST: str = "localhost"
+    CHROMADB_PORT: int = 8000
+
+    # Doubao Embedding 配置
+    DOUBAO_EMBEDDING_API_KEY: str = ""
+    DOUBAO_EMBEDDING_BASE_URL: str = ""
+    DOUBAO_EMBEDDING_MODEL: str = ""
+
     # auth settings
     SECRET_KEY: str = "dev-secret-change-me"
     ALGORITHM: str = "HS256"
