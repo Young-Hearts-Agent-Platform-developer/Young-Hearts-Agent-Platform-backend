@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from app.main import app
 from app.db.session import SessionLocal
@@ -6,6 +7,12 @@ from app.models.user import User
 from app.services.user_service import create_user
 from app.schemas.user import UserRegisterRequest
 from sqlalchemy.orm import Session
+
+
+# @pytest.fixture(scope="session", autouse=True)
+# def mock_celery_tasks():
+#     with patch("app.services.knowledge_service.process_knowledge_document.delay") as mock_delay:
+#         yield mock_delay
 
 
 @pytest.fixture(scope="session")

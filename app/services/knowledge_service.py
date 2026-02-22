@@ -1,10 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from fastapi import HTTPException
-from typing import List, Optional
+from typing import List, Optional, Any
+from datetime import datetime
 from app.models.knowledge import KnowledgeItem
 from app.schemas.knowledge import KnowledgeItemCreate, KnowledgeItemUpdate, KnowledgeItemAudit
-from datetime import datetime
+from app.tasks.knowledge_tasks import process_knowledge_document
 
 
 class KnowledgeService:
@@ -19,6 +20,12 @@ class KnowledgeService:
 		self.db.add(item)
 		self.db.commit()
 		self.db.refresh(item)
+		
+		# 如果创建时状态为 published，触发异步任务进行切片和向量化
+		if getattr(item, "status") == "published":
+			task: Any = process_knowledge_document
+			task.delay(getattr(item, "id"))
+			
 		return item
 
 	def get_item(self, item_id: int) -> Optional[KnowledgeItem]:
@@ -35,11 +42,19 @@ class KnowledgeService:
 		# 权限校验：作者本人或管理员/专家
 		if getattr(item, "author_id") != user_id and not any(role in user_roles for role in ["admin", "expert"]):
 			raise HTTPException(status_code=403, detail="Permission denied to edit this item")
+		
+		old_status = getattr(item, "status")
 		update_data = data.model_dump(exclude_unset=True)
 		for key, value in update_data.items():
 			setattr(item, key, value)
 		self.db.commit()
 		self.db.refresh(item)
+		
+		# 如果状态变更为 published，触发异步任务进行切片和向量化
+		if old_status != "published" and getattr(item, "status") == "published":
+			task: Any = process_knowledge_document
+			task.delay(getattr(item, "id"))
+			
 		return item
 
 	def delete_item(self, item_id: int, user_id: int, user_roles: List[str]):
@@ -67,5 +82,10 @@ class KnowledgeService:
 		setattr(item, "reviewed_at", datetime.now())
 		self.db.commit()
 		self.db.refresh(item)
-		# TODO: 如果 status == "published", 触发异步任务进行切片和向量化
+		
+		# 如果审核通过并发布，触发异步任务进行切片和向量化
+		if getattr(item, "status") == "published":
+			task: Any = process_knowledge_document
+			task.delay(getattr(item, "id"))
+			
 		return item

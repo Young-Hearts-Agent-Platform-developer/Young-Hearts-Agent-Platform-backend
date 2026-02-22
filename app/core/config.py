@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     ark_base_url: str | None = None
     ark_model: str | None = None
 
+    # Redis 配置
+    REDIS_URL: str = "redis://localhost:6379/0"
+
     model_config = {
         "env_file": ".env"
     }
