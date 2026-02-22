@@ -1,5 +1,7 @@
 import json
-from fastapi import APIRouter, Depends, HTTPException, Query
+import os
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.db.session import get_db
@@ -109,16 +111,97 @@ async def audit_item(
     return service.audit_item(item_id=item_id, expert_id=expert_id, audit_data=req)
 
 
-from fastapi import UploadFile, File
+def process_multimodal_file(file_path: str) -> str:
+    """
+    调用多模态处理函数（暂未实现），将文件处理为文本
+    """
+    # TODO: 实现多模态处理
+    return f"Extracted text from {file_path}"
+
 @router.post("/upload")
 async def upload_knowledge_file(
-    file: UploadFile = File(...),
+    title: Optional[str] = Form(None, description="标题，纯文本上传时作为文件名"),
+    text_content: Optional[str] = Form(None, description="纯文本内容"),
+    file: Optional[UploadFile] = File(None, description="上传的文件"),
+    category: Optional[str] = Form(None),
+    risk_level: Optional[str] = Form("low"),
+    document_type: Optional[str] = Form(None),
+    target_audience: Optional[str] = Form(None),
+    applicable_age: Optional[str] = Form(None),
     current_user: User = Depends(get_current_user),
     service: KnowledgeService = Depends(get_knowledge_service)
 ):
     roles = get_user_roles(current_user)
     if not any(role in roles for role in ["volunteer", "expert", "admin"]):
         raise HTTPException(status_code=403, detail="Permission denied")
-    # TODO: 接收并保存文件，同步调用 rag/ 中的相关服务进行切片
-    # 具体实现方式待定，此处仅为接口占位
-    return {"message": f"File {file.filename} uploaded successfully. Processing will be implemented later."}
+        
+    if not text_content and not file:
+        raise HTTPException(status_code=400, detail="Either text_content or file must be provided")
+        
+    base_dir = "./data/raw_data"
+    os.makedirs(base_dir, exist_ok=True)
+    date_str = datetime.now().strftime("%Y%m%d")
+    
+    content_text = ""
+    final_title = title
+    
+    if text_content:
+        # 纯文本（不是文件）
+        original_title = title or "untitled"
+        filename = f"{original_title}.txt"
+        base_name, ext = os.path.splitext(filename)
+        
+        new_filename = f"{date_str}-{base_name}{ext}"
+        file_path = os.path.join(base_dir, new_filename)
+        
+        counter = 1
+        while os.path.exists(file_path):
+            new_filename = f"{date_str}-{base_name}_{counter}{ext}"
+            file_path = os.path.join(base_dir, new_filename)
+            counter += 1
+            
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(text_content)
+            
+        content_text = text_content
+        final_title = title or original_title
+        
+    elif file:
+        # 文件
+        original_title = file.filename
+        base_name, ext = os.path.splitext(original_title)
+        
+        new_filename = f"{date_str}-{original_title}"
+        file_path = os.path.join(base_dir, new_filename)
+        
+        counter = 1
+        while os.path.exists(file_path):
+            new_filename = f"{date_str}-{base_name}_{counter}{ext}"
+            file_path = os.path.join(base_dir, new_filename)
+            counter += 1
+            
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+            
+        # 调用多模态处理函数（暂未实现），将文件处理为文本
+        content_text = process_multimodal_file(file_path)
+        final_title = title or base_name
+
+    # 触发解析流程
+    # 创建 KnowledgeItem 并触发异步任务
+    item_data = KnowledgeItemCreate(
+        title=final_title,
+        content=content_text,
+        category=category,
+        risk_level=risk_level,
+        document_type=document_type,
+        target_audience=[target_audience] if target_audience else [],
+        applicable_age=[applicable_age] if applicable_age else [],
+        status="published" # 直接发布以触发解析流程
+    )
+    
+    user_id = int(getattr(current_user, 'id', 0))
+    item = service.create_item(user_id=user_id, data=item_data)
+    
+    return {"message": "File uploaded and processing started", "item_id": item.id}
