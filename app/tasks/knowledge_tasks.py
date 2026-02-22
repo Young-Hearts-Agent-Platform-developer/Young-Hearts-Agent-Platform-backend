@@ -15,11 +15,33 @@ def parse_document_content(content: str, doc_type: str) -> str:
     解析文档内容。预留多模态文件处理接口。
     如果 content 是文件路径或 URL，根据 doc_type 进行解析。
     """
-    # 预留多模态处理逻辑
+    # 如果 content 是一个存在的文件路径
+    if os.path.isfile(content):
+        if doc_type == "txt":
+            try:
+                with open(content, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception as e:
+                logger.error(f"Failed to read txt file {content}: {e}")
+                return content
+        elif doc_type in ["pdf", "image", "audio", "video", "png", "jpg", "jpeg", "mp3", "mp4"]:
+            logger.info(f"Processing multimodal file type: {doc_type}")
+            # TODO: 接入 OCR、版面分析或语音识别等模型
+            # return extract_text_from_multimodal(content, doc_type)
+            return f"Extracted text from {content} (Placeholder for {doc_type})"
+        else:
+            # 尝试作为纯文本读取
+            try:
+                with open(content, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception as e:
+                logger.error(f"Failed to read file {content}: {e}")
+                return content
+
+    # 预留多模态处理逻辑 (如果 content 不是文件路径，但 doc_type 是多模态类型)
     if doc_type in ["pdf", "image", "audio", "video"]:
-        logger.info(f"Processing multimodal file type: {doc_type}")
+        logger.info(f"Processing multimodal content type: {doc_type}")
         # TODO: 接入 OCR、版面分析或语音识别等模型
-        # return extract_text_from_multimodal(content, doc_type)
         return content  # 暂且返回原内容或占位符
     
     # 默认作为纯文本处理

@@ -111,13 +111,6 @@ async def audit_item(
     return service.audit_item(item_id=item_id, expert_id=expert_id, audit_data=req)
 
 
-def process_multimodal_file(file_path: str) -> str:
-    """
-    调用多模态处理函数（暂未实现），将文件处理为文本
-    """
-    # TODO: 实现多模态处理
-    return f"Extracted text from {file_path}"
-
 @router.post("/upload")
 async def upload_knowledge_file(
     title: Optional[str] = Form(None, description="标题，纯文本上传时作为文件名"),
@@ -168,7 +161,7 @@ async def upload_knowledge_file(
         
     elif file:
         # 文件
-        original_title = file.filename
+        original_title = file.filename or "untitled"
         base_name, ext = os.path.splitext(original_title)
         
         new_filename = f"{date_str}-{original_title}"
@@ -184,14 +177,16 @@ async def upload_knowledge_file(
         with open(file_path, "wb") as f:
             f.write(content)
             
-        # 调用多模态处理函数（暂未实现），将文件处理为文本
-        content_text = process_multimodal_file(file_path)
+        # 实际的解析工作交由 Celery 异步任务处理
+        content_text = file_path
         final_title = title or base_name
+        if not document_type:
+            document_type = ext.lstrip('.').lower()
 
     # 触发解析流程
     # 创建 KnowledgeItem 并触发异步任务
     item_data = KnowledgeItemCreate(
-        title=final_title,
+        title=final_title or "untitled",
         content=content_text,
         category=category,
         risk_level=risk_level,
