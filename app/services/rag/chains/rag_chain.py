@@ -6,6 +6,7 @@ from langchain_classic.storage import EncoderBackedStore, LocalFileStore
 from langchain_classic.retrievers import ParentDocumentRetriever
 from app.services.rag.vectorstore.chroma import get_chroma_collection
 from app.services.rag.splitters.custom_splitter import CustomSplitter
+from app.core.config import settings
 
 def get_docstore(store_path: str = "./data/parent_docs"):
     os.makedirs(store_path, exist_ok=True)
@@ -27,7 +28,7 @@ def get_docstore(store_path: str = "./data/parent_docs"):
     return store
 
 def get_retriever():
-    vectorstore = get_chroma_collection("knowledge_base")
+    vectorstore = get_chroma_collection(settings.CHROMA_COLLECTION_NAME)
     store = get_docstore()
     
     parent_splitter = CustomSplitter.get_medium_risk_parent_splitter()

@@ -4,6 +4,7 @@ from app.db.session import SessionLocal
 from app.models.knowledge import KnowledgeItem
 from app.services.rag.splitters.custom_splitter import CustomSplitter
 from app.services.rag.vectorstore.chroma import get_chroma_collection
+from app.core.config import settings
 from langchain_classic.storage import LocalFileStore
 from langchain_classic.retrievers import ParentDocumentRetriever
 import os
@@ -87,7 +88,7 @@ def process_knowledge_document(doc_id: int):
         }
         
         # 4. 获取 Chroma 集合
-        vectorstore = get_chroma_collection("knowledge_base")
+        vectorstore = get_chroma_collection(settings.CHROMA_COLLECTION_NAME)
         
         # 5. 根据风险等级进行切片和入库
         risk_level = str(doc_risk_level) if doc_risk_level else "low"

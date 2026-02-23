@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # ChromaDB 配置
     CHROMADB_HOST: str = "localhost"
     CHROMADB_PORT: int = 8000
+    CHROMA_COLLECTION_NAME: str = "knowledge_base"
 
     # Doubao Embedding 配置
     DOUBAO_EMBEDDING_API_KEY: str = ""
