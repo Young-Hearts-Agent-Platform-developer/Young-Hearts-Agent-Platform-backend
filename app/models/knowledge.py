@@ -10,6 +10,7 @@ class KnowledgeItem(Base):
     title = Column(String(255), nullable=False)
     summary = Column(String(512))
     content = Column(Text, nullable=False)
+    file_path = Column(String(512), nullable=True, comment="上传文件的本地存储路径")
     tags = Column(JSON, default=list)
     category = Column(String(100))
     risk_level = Column(String(32), default="low", comment="风险等级: high, medium, low")

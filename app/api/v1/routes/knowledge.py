@@ -137,6 +137,7 @@ async def upload_knowledge_file(
     
     content_text = ""
     final_title = title
+    file_path_db = None
     
     if text_content:
         # 纯文本（不是文件）
@@ -158,6 +159,7 @@ async def upload_knowledge_file(
             
         content_text = text_content
         final_title = title or original_title
+        file_path_db = file_path
         
     elif file:
         # 文件
@@ -177,8 +179,15 @@ async def upload_knowledge_file(
         with open(file_path, "wb") as f:
             f.write(content)
             
-        # 实际的解析工作交由 Celery 异步任务处理
-        content_text = file_path
+        file_path_db = file_path
+        
+        if ext.lower() == '.txt':
+            # 文本文件直接读取内容
+            content_text = content.decode('utf-8')
+        else:
+            # 非文本文件，内容暂空，由异步任务解析
+            content_text = ""
+            
         final_title = title or base_name
         if not document_type:
             document_type = ext.lstrip('.').lower()
@@ -188,6 +197,7 @@ async def upload_knowledge_file(
     item_data = KnowledgeItemCreate(
         title=final_title or "untitled",
         content=content_text,
+        file_path=file_path_db,
         category=category,
         risk_level=risk_level,
         document_type=document_type,

@@ -18,7 +18,6 @@ def override_auth():
     app.dependency_overrides.clear()
 
 
-@pytest.mark.skip(reason="该测试已通过")
 def test_upload_text():
     response = client.post(
         "/api/knowledge/upload",
@@ -42,7 +41,6 @@ def test_upload_text():
     assert found
 
 
-@pytest.mark.skip(reason="该测试已通过")
 def test_upload_file():
     file_content = b"This is a test file content."
     response = client.post(

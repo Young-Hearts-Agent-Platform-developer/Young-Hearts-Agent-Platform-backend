@@ -67,8 +67,17 @@ def process_knowledge_document(doc_id: int):
         
         # 2. 解析内容（预留多模态处理）
         doc_content = getattr(doc, "content", "")
+        doc_file_path = getattr(doc, "file_path", None)
         doc_type = getattr(doc, "document_type", "text")
-        parsed_content = parse_document_content(str(doc_content), str(doc_type) if doc_type else "text")
+        
+        if not doc_content and doc_file_path and os.path.exists(doc_file_path):
+            # 如果内容为空且存在文件路径，说明需要从文件中提取内容（如 PDF、图片）
+            parsed_content = parse_document_content(doc_file_path, str(doc_type) if doc_type else "text")
+            # 更新数据库中的 content（使用 setattr 避免静态类型检查器将类属性 Column[...] 视为实例类型）
+            setattr(doc, "content", parsed_content)
+            db.commit()
+        else:
+            parsed_content = doc_content
         
         # 3. 准备元数据
         doc_title = getattr(doc, "title", "")

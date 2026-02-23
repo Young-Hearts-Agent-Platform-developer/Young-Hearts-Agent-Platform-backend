@@ -1226,6 +1226,18 @@
             "type": "string",
             "title": "Content"
           },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path",
+            "description": "文件路径"
+          },
           "tags": {
             "anyOf": [
               {
@@ -1368,6 +1380,18 @@
           "content": {
             "type": "string",
             "title": "Content"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path",
+            "description": "文件路径"
           },
           "tags": {
             "anyOf": [
@@ -1553,6 +1577,17 @@
               }
             ],
             "title": "Content"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
           },
           "tags": {
             "anyOf": [

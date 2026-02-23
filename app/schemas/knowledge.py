@@ -7,6 +7,7 @@ class KnowledgeItemBase(BaseModel):
     title: str
     summary: Optional[str] = None
     content: str
+    file_path: Optional[str] = Field(default=None, description="文件路径")
     tags: Optional[List[str]] = []
     category: Optional[str] = None
     risk_level: Optional[str] = Field(default="low", description="风险等级: high, medium, low")
@@ -23,6 +24,7 @@ class KnowledgeItemUpdate(BaseModel):
     title: Optional[str] = None
     summary: Optional[str] = None
     content: Optional[str] = None
+    file_path: Optional[str] = None
     tags: Optional[List[str]] = None
     category: Optional[str] = None
     risk_level: Optional[str] = None
