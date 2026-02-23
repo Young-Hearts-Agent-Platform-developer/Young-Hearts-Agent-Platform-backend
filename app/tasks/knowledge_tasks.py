@@ -48,8 +48,35 @@ def parse_document_content(content: str, doc_type: str) -> str:
     # 默认作为纯文本处理
     return content
 
-@celery_app.task(name="process_knowledge_document")
-def process_knowledge_document(doc_id: int):
+@celery_app.task(name="extract_knowledge_text")
+def extract_knowledge_text(doc_id: int):
+    """
+    异步提取知识库文档文本
+    """
+    db = SessionLocal()
+    try:
+        doc = db.query(KnowledgeItem).filter(KnowledgeItem.id == doc_id).first()
+        if not doc:
+            logger.error(f"Document {doc_id} not found.")
+            return
+        
+        doc_content = getattr(doc, "content", "")
+        doc_file_path = getattr(doc, "file_path", None)
+        doc_type = getattr(doc, "document_type", "text")
+        
+        if not doc_content and doc_file_path and os.path.exists(doc_file_path):
+            parsed_content = parse_document_content(doc_file_path, str(doc_type) if doc_type else "text")
+            setattr(doc, "content", parsed_content)
+            db.commit()
+            logger.info(f"Successfully extracted text for document {doc_id}")
+    except Exception as e:
+        logger.error(f"Error extracting text for document {doc_id}: {str(e)}")
+        db.rollback()
+    finally:
+        db.close()
+
+@celery_app.task(name="vectorize_knowledge_document")
+def vectorize_knowledge_document(doc_id: int):
     """
     异步处理知识库文档：解析、切片、向量化、入库
     """

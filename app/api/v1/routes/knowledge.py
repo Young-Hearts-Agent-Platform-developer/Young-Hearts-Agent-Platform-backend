@@ -121,9 +121,13 @@ async def upload_knowledge_file(
     document_type: Optional[str] = Form(None),
     target_audience: Optional[str] = Form(None),
     applicable_age: Optional[str] = Form(None),
+    status: str = Form("draft", description="上传状态：draft 或 pending_review"),
     current_user: User = Depends(get_current_user),
     service: KnowledgeService = Depends(get_knowledge_service)
 ):
+    if status not in ["draft", "pending_review", "published"]:
+        raise HTTPException(status_code=400, detail="Invalid status. Must be 'draft', 'pending_review' or 'published'")
+        
     roles = get_user_roles(current_user)
     if not any(role in roles for role in ["volunteer", "expert", "admin"]):
         raise HTTPException(status_code=403, detail="Permission denied")
@@ -203,7 +207,7 @@ async def upload_knowledge_file(
         document_type=document_type,
         target_audience=[target_audience] if target_audience else [],
         applicable_age=[applicable_age] if applicable_age else [],
-        status="published" # 直接发布以触发解析流程
+        status=status # 使用前端传入的状态
     )
     
     user_id = int(getattr(current_user, 'id', 0))

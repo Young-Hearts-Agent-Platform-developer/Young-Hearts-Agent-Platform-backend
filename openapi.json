@@ -869,6 +869,12 @@
               }
             ],
             "title": "Applicable Age"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "上传状态：draft 或 pending_review",
+            "default": "draft"
           }
         },
         "type": "object",

@@ -99,6 +99,9 @@ python -c "from app.db.session import init_db; init_db()"
 ```bash
 # 启动开发服务器 (热重载)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 启动 Celery Worker (处理异步任务)
+celery -A app.core.celery_app worker -l info --pool=solo
 ```
 
 服务启动后，访问 API 文档：

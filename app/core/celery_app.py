@@ -14,4 +14,5 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="Asia/Shanghai",
     enable_utc=True,
+    imports=["app.tasks.knowledge_tasks"]
 )

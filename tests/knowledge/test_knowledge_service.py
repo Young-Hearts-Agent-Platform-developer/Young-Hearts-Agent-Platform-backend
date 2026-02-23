@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi import HTTPException
@@ -6,6 +7,18 @@ from app.services.knowledge_service import KnowledgeService
 from app.schemas.knowledge import KnowledgeItemCreate, KnowledgeItemUpdate, KnowledgeItemAudit
 from app.models import Base
 from app.models.knowledge import KnowledgeItem
+
+
+@pytest.fixture(scope="function")
+def mock_extract_task():
+    with patch("app.services.knowledge_service.extract_knowledge_text.delay") as mock:
+        yield mock
+
+
+@pytest.fixture(scope="function")
+def mock_vectorize_task():
+    with patch("app.services.knowledge_service.vectorize_knowledge_document.delay") as mock:
+        yield mock
 
 
 @pytest.fixture(scope="function")
@@ -47,24 +60,37 @@ def expert_roles():
     ("知识标题1", "知识内容1", "low"),
     ("知识标题2", "知识内容2", "high")
 ])
-def test_create_and_get_item(service, db_session, user_id, title, content, risk_level):
-    data = KnowledgeItemCreate(title=title, content=content, risk_level=risk_level)
+def test_create_and_get_item(service, db_session, user_id, title, content, risk_level, mock_extract_task, mock_vectorize_task):
+    data = KnowledgeItemCreate(title=title, content=content, risk_level=risk_level, status="draft")
     item = service.create_item(user_id=user_id, data=data)
     assert item.id > 0
     fetched = service.get_item(item.id)
     assert fetched.title == title
     assert fetched.content == content
     assert fetched.risk_level == risk_level
+    
+    # 验证调用了 extract_knowledge_text 任务
+    mock_extract_task.assert_called_once_with(item.id)
+    mock_vectorize_task.assert_not_called()
 
 
-@pytest.mark.skip(reason="该测试已通过")
+def test_create_published_item(service, db_session, user_id, mock_extract_task, mock_vectorize_task):
+    data = KnowledgeItemCreate(title="已发布", content="内容", status="published")
+    item = service.create_item(user_id=user_id, data=data)
+    
+    # 验证调用了 vectorize_knowledge_document 任务
+    mock_vectorize_task.assert_called_once_with(item.id)
+    mock_extract_task.assert_not_called()
+
+
+# @pytest.mark.skip(reason="该测试已通过")
 def test_get_nonexistent_item(service, db_session):
     with pytest.raises(HTTPException) as exc_info:
         service.get_item(999)
     assert exc_info.value.status_code == 404
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_get_deleted_item(service, db_session, user_id, user_roles):
     data = KnowledgeItemCreate(title="删除测试", content="内容")
     item = service.create_item(user_id=user_id, data=data)
@@ -74,18 +100,28 @@ def test_get_deleted_item(service, db_session, user_id, user_roles):
     assert exc_info.value.status_code == 404
 
 
-@pytest.mark.skip(reason="该测试已通过")
-def test_update_item(service, db_session, user_id, user_roles):
-    data = KnowledgeItemCreate(title="原始标题", content="原始内容")
+# @pytest.mark.skip(reason="该测试已通过")
+def test_update_item(service, db_session, user_id, user_roles, mock_extract_task, mock_vectorize_task):
+    data = KnowledgeItemCreate(title="原始标题", content="原始内容", status="draft")
     item = service.create_item(user_id=user_id, data=data)
-    update = KnowledgeItemUpdate(title="新标题", content="新内容")
+    
+    # 重置 mock
+    mock_extract_task.reset_mock()
+    mock_vectorize_task.reset_mock()
+    
+    update = KnowledgeItemUpdate(title="新标题", content="新内容", status="published")
     updated = service.update_item(item.id, user_id, update, user_roles)
     assert updated.title == "新标题"
     assert updated.content == "新内容"
+    assert updated.status == "published"
+    
+    # 状态变更为 published，应该调用 vectorize_knowledge_document
+    mock_vectorize_task.assert_called_once_with(item.id)
+    mock_extract_task.assert_not_called()
 
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_update_item_by_expert(service, db_session, user_id, expert_id, expert_roles):
     data = KnowledgeItemCreate(title="原始标题", content="原始内容")
     item = service.create_item(user_id=user_id, data=data)
@@ -95,7 +131,7 @@ def test_update_item_by_expert(service, db_session, user_id, expert_id, expert_r
     assert updated.content == "专家修改内容"
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_update_item_by_unauthorized_user(service, db_session, user_id):
     data = KnowledgeItemCreate(title="原始标题", content="原始内容")
     item = service.create_item(user_id=user_id, data=data)
@@ -105,7 +141,7 @@ def test_update_item_by_unauthorized_user(service, db_session, user_id):
     assert exc_info.value.status_code == 403
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_delete_item(service, db_session, user_id, user_roles):
     data = KnowledgeItemCreate(title="删除测试", content="内容")
     item = service.create_item(user_id=user_id, data=data)
@@ -114,7 +150,7 @@ def test_delete_item(service, db_session, user_id, user_roles):
         service.get_item(item.id)
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_delete_item_by_expert(service, db_session, user_id, expert_id, expert_roles):
     data = KnowledgeItemCreate(title="删除测试", content="内容")
     item = service.create_item(user_id=user_id, data=data)
@@ -124,7 +160,7 @@ def test_delete_item_by_expert(service, db_session, user_id, expert_id, expert_r
     assert exc_info.value.status_code == 404
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_delete_item_by_unauthorized_user(service, db_session, user_id):
     data = KnowledgeItemCreate(title="删除测试", content="内容")
     item = service.create_item(user_id=user_id, data=data)
@@ -133,7 +169,7 @@ def test_delete_item_by_unauthorized_user(service, db_session, user_id):
     assert exc_info.value.status_code == 403
 
 
-@pytest.mark.skip(reason="该测试已通过")
+# @pytest.mark.skip(reason="该测试已通过")
 def test_list_items(service, db_session, user_id, user_roles):
     for i in range(5):
         service.create_item(user_id=user_id, data=KnowledgeItemCreate(title=f"标题{i}", content=f"内容{i}", status="published"))
@@ -158,27 +194,53 @@ def test_list_items(service, db_session, user_id, user_roles):
     assert len(items) == 4
 
 
-@pytest.mark.skip(reason="该测试已通过")
-def test_audit_item(service, db_session, user_id, expert_id, expert_roles):
+# @pytest.mark.skip(reason="该测试已通过")
+def test_audit_item(service, db_session, user_id, expert_id, expert_roles, mock_extract_task, mock_vectorize_task):
     # 创建待审核条目
     data = KnowledgeItemCreate(title="待审核", content="内容", status="pending_review")
     item = service.create_item(user_id=user_id, data=data)
+    
+    # 创建时应该调用 extract_knowledge_text
+    mock_extract_task.assert_called_once_with(item.id)
+    mock_vectorize_task.assert_not_called()
+    
+    # 重置 mock
+    mock_extract_task.reset_mock()
+    mock_vectorize_task.reset_mock()
+    
     audit = KnowledgeItemAudit(status="published", review_comments="通过")
     audited = service.audit_item(item.id, expert_id, audit)
     assert audited.status == "published"
     assert audited.review_comments == "通过"
     assert audited.reviewed_by == expert_id
     assert audited.reviewed_at is not None
+    
+    # 审核通过后应该调用 vectorize_knowledge_document
+    mock_vectorize_task.assert_called_once_with(item.id)
+    mock_extract_task.assert_not_called()
+
+    # 重置 mock
+    mock_extract_task.reset_mock()
+    mock_vectorize_task.reset_mock()
 
     # 审核拒绝
     data2 = KnowledgeItemCreate(title="待审核2", content="内容2", status="pending_review")
     item2 = service.create_item(user_id=user_id, data=data2)
+    
+    # 重置 mock
+    mock_extract_task.reset_mock()
+    mock_vectorize_task.reset_mock()
+    
     audit2 = KnowledgeItemAudit(status="rejected", review_comments="不通过")
     audited2 = service.audit_item(item2.id, expert_id, audit2)
     assert audited2.status == "rejected"
     assert audited2.review_comments == "不通过"
     assert audited2.reviewed_by == expert_id
     assert audited2.reviewed_at is not None
+    
+    # 审核拒绝不应该调用 vectorize_knowledge_document
+    mock_vectorize_task.assert_not_called()
+    mock_extract_task.assert_not_called()
 
     # 非待审核状态不能审核
     data3 = KnowledgeItemCreate(title="已发布", content="内容3", status="published")

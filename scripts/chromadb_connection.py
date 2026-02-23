@@ -1,7 +1,7 @@
 import chromadb
 
 # 连接到 Docker 中的 ChromaDB
-client = chromadb.HttpClient(host="localhost", port=8000)
+client = chromadb.HttpClient(host="localhost", port=8001)
 
 # 列出所有集合
 collections = client.list_collections()

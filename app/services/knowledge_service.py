@@ -5,7 +5,7 @@ from typing import List, Optional, Any
 from datetime import datetime
 from app.models.knowledge import KnowledgeItem
 from app.schemas.knowledge import KnowledgeItemCreate, KnowledgeItemUpdate, KnowledgeItemAudit
-from app.tasks.knowledge_tasks import process_knowledge_document
+from app.tasks.knowledge_tasks import extract_knowledge_text, vectorize_knowledge_document
 
 
 class KnowledgeService:
@@ -23,7 +23,11 @@ class KnowledgeService:
 		
 		# 如果创建时状态为 published，触发异步任务进行切片和向量化
 		if getattr(item, "status") == "published":
-			task: Any = process_knowledge_document
+			task: Any = vectorize_knowledge_document
+			task.delay(getattr(item, "id"))
+		else:
+			# 否则仅触发文本提取任务
+			task: Any = extract_knowledge_text
 			task.delay(getattr(item, "id"))
 			
 		return item
@@ -52,7 +56,7 @@ class KnowledgeService:
 		
 		# 如果状态变更为 published，触发异步任务进行切片和向量化
 		if old_status != "published" and getattr(item, "status") == "published":
-			task: Any = process_knowledge_document
+			task: Any = vectorize_knowledge_document
 			task.delay(getattr(item, "id"))
 			
 		return item
@@ -85,7 +89,7 @@ class KnowledgeService:
 		
 		# 如果审核通过并发布，触发异步任务进行切片和向量化
 		if getattr(item, "status") == "published":
-			task: Any = process_knowledge_document
+			task: Any = vectorize_knowledge_document
 			task.delay(getattr(item, "id"))
 			
 		return item

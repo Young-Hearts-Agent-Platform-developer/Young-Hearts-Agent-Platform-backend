@@ -47,7 +47,8 @@ def test_upload_file():
         "/api/knowledge/upload",
         data={
             "category": "test",
-            "risk_level": "low"
+            "risk_level": "low",
+            "status": "pending_review"
         },
         files={"file": ("test_file_upload.txt", file_content, "text/plain")}
     )
@@ -62,3 +63,18 @@ def test_upload_file():
             found = True
             break
     assert found
+
+
+def test_upload_invalid_status():
+    response = client.post(
+        "/api/knowledge/upload",
+        data={
+            "title": "test_invalid_status",
+            "text_content": "This is a test text content.",
+            "category": "test",
+            "risk_level": "low",
+            "status": "invalid_status"
+        }
+    )
+    assert response.status_code == 400
+    assert "Invalid status" in response.json()["detail"]
