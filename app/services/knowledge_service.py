@@ -68,10 +68,12 @@ class KnowledgeService:
 		setattr(item, "is_deleted", True)
 		self.db.commit()
 
-	def list_items(self, status: Optional[str] = "published", skip: int = 0, limit: int = 20) -> tuple[int, List[KnowledgeItem]]:
+	def list_items(self, status: Optional[str] = "published", author_id: Optional[int] = None, skip: int = 0, limit: int = 20) -> tuple[int, List[KnowledgeItem]]:
 		query = self.db.query(KnowledgeItem).filter(KnowledgeItem.is_deleted == False)
 		if status:
 			query = query.filter(KnowledgeItem.status == status)
+		if author_id is not None:
+			query = query.filter(KnowledgeItem.author_id == author_id)
 		total = query.count()
 		items = query.order_by(desc(KnowledgeItem.created_at)).offset(skip).limit(limit).all()
 		return total, items

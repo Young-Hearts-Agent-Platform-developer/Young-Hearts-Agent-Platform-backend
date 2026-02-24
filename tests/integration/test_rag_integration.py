@@ -19,15 +19,15 @@ def test_end_to_end_rag_flow(client: TestClient, admin_token: dict, db):
         rare_keyword = "测试专用罕见词汇X99"
         knowledge_data = {
             "title": "集成测试文档",
-            "content": f"这是一个用于集成测试的文档。核心知识点是：{rare_keyword}代表一种特殊的测试状态。",
+            "text_content": f"这是一个用于集成测试的文档。核心知识点是：{rare_keyword}代表一种特殊的测试状态。",
             "category": "test",
             "risk_level": "low",
             "status": "published"
         }
         
-        resp = client.post("/api/knowledge/items", json=knowledge_data, headers=admin_token)
+        resp = client.post("/api/knowledge/upload", data=knowledge_data, headers=admin_token)
         assert resp.status_code == 200
-        doc_id = resp.json()["id"]
+        doc_id = resp.json()["item_id"]
         
         # 3. 同步执行向量化任务 (绕过 Celery)
         extract_knowledge_text(doc_id)

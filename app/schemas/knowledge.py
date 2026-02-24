@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 
 
@@ -44,7 +44,7 @@ class KnowledgeItemResponse(KnowledgeItemBase):
     author_id: int
     status: str
     review_comments: Optional[str] = None
-    reviewed_by: Optional[int] = None
+    reviewed_by: Optional[Union[int, str]] = None
     reviewed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime

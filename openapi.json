@@ -366,30 +366,45 @@
         }
       }
     },
-    "/api/knowledge/items": {
-      "post": {
+    "/api/knowledge/my-items": {
+      "get": {
         "tags": [
           "knowledge"
         ],
-        "summary": "Create Item",
-        "operationId": "create_item_api_knowledge_items_post",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/KnowledgeItemCreate"
-              }
+        "summary": "List My Items",
+        "operationId": "list_my_items_api_knowledge_my_items_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
             }
           }
-        },
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KnowledgeItemResponse"
+                  "$ref": "#/components/schemas/KnowledgeItemListResponse"
                 }
               }
             }
@@ -405,7 +420,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "/api/knowledge/items": {
       "get": {
         "tags": [
           "knowledge"
@@ -1211,140 +1228,6 @@
         ],
         "title": "KnowledgeItemAudit"
       },
-      "KnowledgeItemCreate": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "summary": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Summary"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "file_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Path",
-            "description": "文件路径"
-          },
-          "tags": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Tags",
-            "default": []
-          },
-          "category": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Category"
-          },
-          "risk_level": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Risk Level",
-            "description": "风险等级: high, medium, low",
-            "default": "low"
-          },
-          "document_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Type",
-            "description": "文档类型/证据等级"
-          },
-          "target_audience": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Target Audience",
-            "description": "适用人群"
-          },
-          "applicable_age": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Applicable Age",
-            "description": "适用年龄"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status",
-            "default": "draft"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "content"
-        ],
-        "title": "KnowledgeItemCreate"
-      },
       "KnowledgeItemListResponse": {
         "properties": {
           "total": {
@@ -1507,6 +1390,9 @@
             "anyOf": [
               {
                 "type": "integer"
+              },
+              {
+                "type": "string"
               },
               {
                 "type": "null"

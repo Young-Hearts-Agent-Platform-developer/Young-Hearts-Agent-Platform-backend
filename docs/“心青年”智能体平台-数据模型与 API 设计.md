@@ -66,6 +66,7 @@
 - `title`: String
 - `summary`: String (摘要)
 - `content`: Text (Markdown 原始内容)
+- `file_path`: String (上传文件的本地存储路径)
 - `tags`: JSON
 - `category`: String (如: "情绪干预", "生活自理")
 - `risk_level`: String ['high', 'medium', 'low'] (风险等级)
@@ -243,22 +244,22 @@
 
 | Method | Endpoint | Description | Roles |
 |---|---|---|---|
-| GET | `/api/knowledge/items` | 搜索/列出已发布知识条目 | Any |
+| GET | `/api/knowledge/items` | 搜索/列出已发布知识条目 (支持关键词过滤) | Any |
+| GET | `/api/knowledge/my-items` | 获取当前用户创建的知识条目 | Author |
 | GET | `/api/knowledge/items/:id` | 获取详情 | Any |
-| POST | `/api/knowledge/items` | 提交知识条目 (草稿/待审核) | Volunteer, Expert, Admin |
 | PUT | `/api/knowledge/items/:id` | 编辑条目 | Author, Expert, Admin |
 | DELETE | `/api/knowledge/items/:id` | 删除条目 | Author, Expert, Admin |
 | GET | `/api/knowledge/audit-list` | 获取待审核列表 | Expert, Admin |
 | POST | `/api/knowledge/:id/audit` | 审核条目 (Pass/Reject + Comment) | Expert, Admin |
-| POST | `/api/knowledge/upload` | 上传文件进行自动切片 | Volunteer, Expert, Admin |
+| POST | `/api/knowledge/upload` | 上传文件/文本 (支持 .txt, .pdf 等或纯文本) | Volunteer, Expert, Admin |
 
 ### 2.4 智能咨询 (RAG Consultation)
 
 | Method | Endpoint | Description | Roles |
 |---|---|---|---|
-| POST | `/api/consult/chat` | 发送消息并获取 AI 回复 (Stream) | Any |
+| POST | `/api/consult/chat` | 发送消息并获取 AI 回复 (Stream, SSE) | Any |
 | POST | `/api/consult/sessions` | 创建新会话 | Any |
-| GET | `/api/consult/sessions` | 获取历史会话列表 | Any |
+| GET | `/api/consult/sessions` | 获取历史会话列表 (最近 20 条) | Any |
 | GET | `/api/consult/sessions/:id` | 获取会话消息详情 | Any |
 | DELETE | `/api/consult/sessions/:id` | 删除会话 | Any |
 

@@ -2,35 +2,34 @@ import pytest
 
 def test_create_item_by_volunteer(client, admin_token):
     response = client.post(
-        "/api/knowledge/items",
+        "/api/knowledge/upload",
         headers=admin_token,
-        json={"title": "Test Title", "content": "Test Content"}
+        data={"title": "Test Title", "text_content": "Test Content"}
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["title"] == "Test Title"
-    assert data["content"] == "Test Content"
-    assert data["status"] == "draft"
+    assert data["message"] == "File uploaded and processing started"
+    assert "item_id" in data
 
 def test_create_item_by_normal_user(client, normal_user_token):
     response = client.post(
-        "/api/knowledge/items",
+        "/api/knowledge/upload",
         headers=normal_user_token,
-        json={"title": "Test Title", "content": "Test Content"}
+        data={"title": "Test Title", "text_content": "Test Content"}
     )
     assert response.status_code == 403
 
 def test_create_item_unauthorized(client):
     response = client.post(
-        "/api/knowledge/items",
-        json={"title": "Test Title", "content": "Test Content"}
+        "/api/knowledge/upload",
+        data={"title": "Test Title", "text_content": "Test Content"}
     )
     assert response.status_code == 401
 
 def test_get_items_list(client, admin_token):
     # Create some items first
-    client.post("/api/knowledge/items", headers=admin_token, json={"title": "Item 1", "content": "Content 1", "status": "published"})
-    client.post("/api/knowledge/items", headers=admin_token, json={"title": "Item 2", "content": "Content 2", "status": "published"})
+    client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Item 1", "text_content": "Content 1", "status": "published"})
+    client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Item 2", "text_content": "Content 2", "status": "published"})
     
     response = client.get("/api/knowledge/items")
     assert response.status_code == 200
@@ -40,8 +39,8 @@ def test_get_items_list(client, admin_token):
     assert data["total"] >= 2
 
 def test_get_item_detail(client, admin_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Detail Item", "content": "Detail Content"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Detail Item", "text_content": "Detail Content"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.get(f"/api/knowledge/items/{item_id}")
     assert response.status_code == 200
@@ -53,8 +52,8 @@ def test_get_nonexistent_item_detail(client):
     assert response.status_code == 404
 
 def test_update_item_by_author(client, admin_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Old Title", "content": "Old Content"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Old Title", "text_content": "Old Content"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.put(
         f"/api/knowledge/items/{item_id}",
@@ -66,8 +65,8 @@ def test_update_item_by_author(client, admin_token):
     assert data["title"] == "New Title"
 
 def test_update_item_by_non_author(client, admin_token, normal_user_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Old Title", "content": "Old Content"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Old Title", "text_content": "Old Content"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.put(
         f"/api/knowledge/items/{item_id}",
@@ -77,8 +76,8 @@ def test_update_item_by_non_author(client, admin_token, normal_user_token):
     assert response.status_code == 403
 
 def test_update_item_by_expert(client, admin_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Old Title", "content": "Old Content"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Old Title", "text_content": "Old Content"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.put(
         f"/api/knowledge/items/{item_id}",
@@ -90,8 +89,8 @@ def test_update_item_by_expert(client, admin_token):
     assert data["title"] == "Expert Title"
 
 def test_delete_item_by_author(client, admin_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "To Delete", "content": "Content"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "To Delete", "text_content": "Content"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.delete(f"/api/knowledge/items/{item_id}", headers=admin_token)
     assert response.status_code == 200
@@ -100,14 +99,14 @@ def test_delete_item_by_author(client, admin_token):
     assert get_resp.status_code == 404
 
 def test_delete_item_by_non_author(client, admin_token, normal_user_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "To Delete", "content": "Content"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "To Delete", "text_content": "Content"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.delete(f"/api/knowledge/items/{item_id}", headers=normal_user_token)
     assert response.status_code == 403
 
 def test_get_audit_list_by_expert(client, admin_token):
-    client.post("/api/knowledge/items", headers=admin_token, json={"title": "Pending Item", "content": "Content", "status": "pending_review"})
+    client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Pending Item", "text_content": "Content", "status": "pending_review"})
     
     response = client.get("/api/knowledge/audit-list", headers=admin_token)
     assert response.status_code == 200
@@ -121,8 +120,8 @@ def test_get_audit_list_unauthorized(client, normal_user_token):
     assert response.status_code == 403
 
 def test_audit_item_by_expert(client, admin_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Pending Item", "content": "Content", "status": "pending_review"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Pending Item", "text_content": "Content", "status": "pending_review"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.post(
         f"/api/knowledge/{item_id}/audit",
@@ -135,8 +134,8 @@ def test_audit_item_by_expert(client, admin_token):
     assert data["review_comments"] == "Looks good"
 
 def test_audit_item_unauthorized(client, admin_token, normal_user_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Pending Item", "content": "Content", "status": "pending_review"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Pending Item", "text_content": "Content", "status": "pending_review"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.post(
         f"/api/knowledge/{item_id}/audit",
@@ -146,8 +145,8 @@ def test_audit_item_unauthorized(client, admin_token, normal_user_token):
     assert response.status_code == 403
 
 def test_audit_item_invalid_status(client, admin_token):
-    create_resp = client.post("/api/knowledge/items", headers=admin_token, json={"title": "Pending Item", "content": "Content", "status": "pending_review"})
-    item_id = create_resp.json()["id"]
+    create_resp = client.post("/api/knowledge/upload", headers=admin_token, data={"title": "Pending Item", "text_content": "Content", "status": "pending_review"})
+    item_id = create_resp.json()["item_id"]
     
     response = client.post(
         f"/api/knowledge/{item_id}/audit",

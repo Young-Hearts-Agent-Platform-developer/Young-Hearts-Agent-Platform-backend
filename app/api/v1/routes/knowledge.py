@@ -27,17 +27,16 @@ def get_user_roles(user: User) -> List[str]:
     return list(roles)
 
 
-@router.post("/items", response_model=KnowledgeItemResponse)
-async def create_item(
-    req: KnowledgeItemCreate,
+@router.get("/my-items", response_model=KnowledgeItemListResponse)
+async def list_my_items(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: KnowledgeService = Depends(get_knowledge_service)
 ):
-    roles = get_user_roles(current_user)
-    if not any(role in roles for role in ["volunteer", "expert", "admin"]):
-        raise HTTPException(status_code=403, detail="Permission denied")
     user_id = int(getattr(current_user, 'id', 0))
-    return service.create_item(user_id=user_id, data=req)
+    total, items = service.list_items(status=None, author_id=user_id, skip=skip, limit=limit)
+    return {"total": total, "items": items}
 
 
 @router.get("/items", response_model=KnowledgeItemListResponse)
@@ -48,7 +47,21 @@ async def list_items(
     service: KnowledgeService = Depends(get_knowledge_service)
 ):
     total, items = service.list_items(status=status, skip=skip, limit=limit)
-    return {"total": total, "items": items}
+    
+    # 隐私处理：匿去敏感信息
+    masked_items = []
+    for item in items:
+        # 将 SQLAlchemy 模型转换为字典以便修改
+        item_dict = {c.name: getattr(item, c.name) for c in item.__table__.columns}
+        if item_dict.get("file_path"):
+            item_dict["file_path"] = "***"
+        if item_dict.get("review_comments"):
+            item_dict["review_comments"] = "***"
+        if item_dict.get("reviewed_by"):
+            item_dict["reviewed_by"] = "***"
+        masked_items.append(item_dict)
+        
+    return {"total": total, "items": masked_items}
 
 
 @router.get("/items/{item_id}", response_model=KnowledgeItemResponse)
