@@ -6,7 +6,7 @@ def create_user(db: Session, user_in):
     """
     创建用户，roles 支持多角色，兼容 UserRegisterRequest。
     """
-    from app.services.auth import get_password_hash
+    from app.services.auth_service import get_password_hash
     from app.models.user import User
     import json
     user = User(

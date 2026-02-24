@@ -4,7 +4,6 @@ description: 执行 Planner 生成的计划，按 Phase 分阶段实施并验证
 argument-hint: 计划文档路径与 Phase (示例: "plans/feature.md, Phase 1")
 tools:
   ['read', 'edit', 'search', 'web', 'todo']
-model: GPT-4.1 (copilot)
 handoffs:
   - label: 返回规划阶段 (Planner)
     agent: Planner
@@ -44,7 +43,6 @@ handoffs:
 ## 输出标准
 - 在变更提交或补丁说明中仅包含计划内指定的代码变更与必要的前言（如 YAML frontmatter），不添加多余的日志或长篇说明文件。
 - 提交 Phase 完成报告，包含：已修改文件列表与变更摘要；自动验证结果（每项 ✓/✕，失败附错误信息）；手动验证清单；推荐修复或下一步。
-- 在 `docs/prompts-design/` 中生成设计报告副本（含提示词正文），便于审计与追溯。
 
 ## 与 Planner 的衔接
 - 当需要 Planner 调整计划或生成下一 Phase 时，触发 handoff，发送当前执行结果摘要并建议下一步。

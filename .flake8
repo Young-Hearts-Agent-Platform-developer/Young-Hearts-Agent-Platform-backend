@@ -4,7 +4,7 @@ exclude = .github, .pytest_cache, .vscode, .venv, __pycache__, docs, deployment
 # E501: Line too long (handled by black)
 # W503: Line break before binary operator
 # D100: Missing docstring in public module
-ignore = E501, W503, D100, W293
+ignore = E501, W503, D100, W293, W191
 max-line-length = 120
 max-complexity = 10
 # Show source code and statistics

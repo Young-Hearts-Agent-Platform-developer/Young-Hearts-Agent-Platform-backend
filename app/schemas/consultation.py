@@ -1,12 +1,23 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, List, Any
 from datetime import datetime
+import json
 
 
 class ConsultationMessageBase(BaseModel):
     role: str
     content: str
     sources: Optional[Any] = None
+
+    @field_validator('sources', mode='before')
+    @classmethod
+    def parse_sources(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
 
 
 class ConsultationMessageCreate(ConsultationMessageBase):

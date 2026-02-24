@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from app.models.consultation import ConsultationSession, ConsultationMessage
 from sqlalchemy import desc
 from fastapi import HTTPException
-from app.services.auth import is_admin
-from app.services.rag.service import generate_topic
+from app.services.auth_service import is_admin
+from app.services.rag.rag_service import generate_topic
 
 
 class ConsultationService:

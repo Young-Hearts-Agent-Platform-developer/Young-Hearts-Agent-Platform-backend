@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 from typing import AsyncGenerator, Optional
 
 import openai
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import get_db
+from app.services.rag.chains.rag_chain import retrieve_context
 
 PROMPT_DIR = os.path.join(os.path.dirname(__file__), 'prompts')
 
@@ -69,12 +71,29 @@ def generate_topic(user_message: str, ai_message: str) -> str:
     return str(result).strip()
 
 
-async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[str] = None) -> AsyncGenerator[str, None]:
-    prompt = load_prompt(role)
+async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[str] = None, sources_out: Optional[list] = None) -> AsyncGenerator[str, None]:
+    # 1. 检索上下文
+    context, sources = await asyncio.to_thread(retrieve_context, query)
+    if sources_out is not None:
+        sources_out.extend(sources)
+        
+    if not context:
+        yield "暂无相关信息，建议转人工咨询。"
+        return
+
+    # 2. 加载 RAG 专用 Prompt
+    rag_prompt_template = load_prompt("rag_prompt")
+    rag_prompt_filled = rag_prompt_template.replace("{context}", context)
+
+    # 3. 加载角色 Prompt
+    role_prompt = load_prompt(role)
     if reasoning_effort:
-        prompt = prompt.replace("{reasoning_effort}", reasoning_effort)
+        role_prompt = role_prompt.replace("{reasoning_effort}", reasoning_effort)
     else:
-        prompt = prompt.replace("{reasoning_effort}", "")
+        role_prompt = role_prompt.replace("{reasoning_effort}", "")
+
+    # 组合 SystemMessage
+    system_content = f"{role_prompt}\n\n{rag_prompt_filled}"
 
     llm = ChatOpenAI(
         api_key=SecretStr(ARK_API_KEY or ""),
@@ -84,7 +103,7 @@ async def async_chat_with_rag(query: str, role: str, reasoning_effort: Optional[
         streaming=True
     )
     messages = [
-        SystemMessage(content=prompt),
+        SystemMessage(content=system_content),
         HumanMessage(content=query)
     ]
     

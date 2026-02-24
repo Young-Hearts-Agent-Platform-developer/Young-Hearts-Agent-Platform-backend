@@ -6,6 +6,7 @@ from app.db.session import init_db
 # include routers
 from app.api.v1.routes import auth as auth_router
 from app.api.v1.routes import consult as consult_router
+from app.api.v1.routes import knowledge as knowledge_router
 # openapi utils
 from app.utils.utils_openapi import generate_openapi_json
 
@@ -37,6 +38,7 @@ app.add_middleware(
 # register API routers
 app.include_router(auth_router.router, prefix="/api/auth", tags=["auth"])
 app.include_router(consult_router.router, prefix="/api/consult", tags=["consult"])
+app.include_router(knowledge_router.router, prefix="/api/knowledge", tags=["knowledge"])
 
 
 @app.get("/health")

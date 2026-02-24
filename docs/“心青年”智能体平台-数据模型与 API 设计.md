@@ -8,39 +8,40 @@
 
 #### `User` (基础用户表)
 系统所有用户的基表。
-- `id`: Include (PK)
+- `id`: BigInteger (PK)
 - `username`: String (Unique)
-- `gender`: String ['male', 'female', 'hidden']
 - `email`: String (Unique)
+- `gender`: String ['male', 'female', 'hidden']
 - `password_hash`: String
 - `nickname`: String
 - `avatar`: String (URL)
-- `roles`: Array<String> ['family', 'volunteer', 'expert', 'admin', 'maintainer']  
-	（JSON 字符串数组，所有 API 返回为字符串数组，数据库存储为 JSON 字符串）
+- `roles`: JSON (Array<String>) ['family', 'volunteer', 'expert', 'admin', 'maintainer']  
+	（JSON 数组，如 ['user', 'admin']，原生 JSON 存储）
 - `status`: String ['active', 'banned', 'pending_review']
+- `is_active`: Boolean
+- `is_superuser`: Boolean
 - `created_at`: DateTime
+- `updated_at`: DateTime
 
 #### `VolunteerProfile` (志愿者扩展表)
-- `user_id`: Integer (FK -> User.id)
+- `user_id`: BigInteger (FK -> User.id)
 - `full_name`: String (真实姓名, 仅管理员可见)
 - `phone`: String (手机号, 仅管理员可见)
 - `public_email`: String (公开邮箱, 可选) 
 - `is_public_visible`: Boolean (是否在志愿者墙展示)
-- `service_hours`: Float (累计服务时长)
-- `skills`: Array<String> (擅长领域)
+- `service_hours`: String (累计服务时长)
+- `skills`: String (擅长领域，JSON 字符串数组)
 - `status`: String ['pending', 'approved', 'rejected'] (注册审核状态)
 - `work_status`: String ['online', 'busy', 'offline'] (服务状态)
 
 #### `ExpertProfile` (专家扩展表)
-- `user_id`: Integer (FK -> User.id)
+- `user_id`: BigInteger (FK -> User.id)
 - `full_name`: String
-- `title`: String (职称)
-- `organization`: String (所属机构)
-- `qualifications`: Array<String> (资质证书URL)
-- `specialties`: Array<String> (擅长领域标签)
 - `phone`: String (仅管理员可见)
 - `public_email`: String
-- `is_public_visible`: Boolean
+- `title`: String (职称)
+- `org`: String (所属机构)
+- `skills`: String (擅长领域标签，JSON 字符串数组)
 - `status`: String ['pending', 'approved', 'rejected']
 
 
@@ -49,8 +50,8 @@
 
 | 字段名        | 类型      | 说明               |
 |--------------|----------|--------------------|
-| session_id   | String   | 会话唯一标识       |
-| user_id      | Integer  | 关联用户ID         |
+| session_id   | String   | 会话唯一标识 (PK)  |
+| user_id      | BigInteger| 关联用户ID         |
 | created_at   | DateTime | 会话创建时间       |
 | expired_at   | DateTime | 会话过期时间       |
 | user_agent   | String   | 客户端信息         |
@@ -65,38 +66,47 @@
 - `title`: String
 - `summary`: String (摘要)
 - `content`: Text (Markdown 原始内容)
-- `tags`: Array<String>
+- `file_path`: String (上传文件的本地存储路径)
+- `tags`: JSON
 - `category`: String (如: "情绪干预", "生活自理")
-- `author_id`: Integer (FK -> User.id, 贡献者)
+- `risk_level`: String ['high', 'medium', 'low'] (风险等级)
+- `document_type`: String (文档类型/证据等级)
+- `target_audience`: JSON (适用人群)
+- `applicable_age`: JSON (适用年龄)
+- `author_id`: BigInteger (FK -> User.id, 贡献者)
 - `status`: String ['draft', 'pending_review', 'published', 'rejected', 'archived']
-- `review_comments`: String (审核意见)
-- `reviewed_by`: Integer (FK -> User.id, 审核专家)
+- `review_comments`: Text (审核意见)
+- `reviewed_by`: BigInteger (FK -> User.id, 审核专家)
 - `reviewed_at`: DateTime
+- `is_deleted`: Boolean (软删除标记)
 - `created_at`: DateTime
 - `updated_at`: DateTime
 
 #### `KnowledgeChunk` (知识切片 - 向量化单元)
 - `id`: Integer (PK)
 - `item_id`: Integer (FK -> KnowledgeItem.id)
-- `content_chunk`: String (被切分的文本段)
+- `parent_id`: Integer (FK -> KnowledgeChunk.id, 父切片ID)
+- `chunk_type`: String ['parent', 'child', 'independent'] (切片类型)
+- `content_chunk`: Text (被切分的文本段)
+- `chunk_metadata`: JSON (切片专属元数据)
 - `vector_id`: String (向量数据库中的 ID)
 - `sequence`: Integer (在原文中的顺序)
 
 ### 1.3 咨询与工单体系
 
 #### `ConsultationSession` (RAG 智能对话会话)
-- `id`: Integer (PK)
-- `user_id`: Integer (FK -> User.id)
+- `id`: BigInteger (PK)
+- `user_id`: BigInteger (FK -> User.id)
 - `topic`: String (自动生成的会话摘要)
 - `created_at`: DateTime
 - `is_archived`: Boolean
 
 #### `ConsultationMessage` (对话消息)
-- `id`: Integer (PK)
-- `session_id`: Integer (FK -> ConsultationSession.id)
-- `role`: String ['user', 'ai', 'system']
+- `id`: BigInteger (PK)
+- `session_id`: BigInteger (FK -> ConsultationSession.id)
+- `role`: String ['user', 'ai']
 - `content`: Text (markdown 格式)
-- `sources`: Array<Object> (RAG 引用来源: [{title, id, score}])
+- `sources`: Text (RAG 引用来源: [{title, id, score}])
 - `created_at`: DateTime
 
 
@@ -155,7 +165,8 @@
 | POST | `/api/auth/logout` | 用户登出 | Yes |
 | POST | `/api/auth/register` | 用户注册（支持多角色与 profile 创建） | No |
 | GET | `/api/auth/me` | 获取当前登录用户信息 (含 Roles & Profile概要) | Yes |
-| POST | `/api/auth/refresh-token` | 刷新 Token | No |
+| PUT | `/api/auth/me` | 更新当前登录用户信息 | Yes |
+| DELETE | `/api/auth/me` | 注销当前登录用户 | Yes |
 
 ### 2.2 用户管理 (Users & Profiles)
 
@@ -233,21 +244,22 @@
 
 | Method | Endpoint | Description | Roles |
 |---|---|---|---|
-| GET | `/api/knowledge/items` | 搜索/列出已发布知识条目 | Any |
+| GET | `/api/knowledge/items` | 搜索/列出已发布知识条目 (支持关键词过滤) | Any |
+| GET | `/api/knowledge/my-items` | 获取当前用户创建的知识条目 | Author |
 | GET | `/api/knowledge/items/:id` | 获取详情 | Any |
-| POST | `/api/knowledge/items` | 提交知识条目 (草稿/待审核) | Volunteer, Expert |
-| PUT | `/api/knowledge/items/:id` | 编辑条目 | Author, Expert |
-| GET | `/api/knowledge/audit-list` | 获取待审核列表 | Expert |
-| POST | `/api/knowledge/items/:id/audit` | 审核条目 (Pass/Reject + Comment) | Expert |
-| POST | `/api/knowledge/upload` | 上传文件进行自动切片 | Volunteer, Expert |
+| PUT | `/api/knowledge/items/:id` | 编辑条目 | Author, Expert, Admin |
+| DELETE | `/api/knowledge/items/:id` | 删除条目 | Author, Expert, Admin |
+| GET | `/api/knowledge/audit-list` | 获取待审核列表 | Expert, Admin |
+| POST | `/api/knowledge/:id/audit` | 审核条目 (Pass/Reject + Comment) | Expert, Admin |
+| POST | `/api/knowledge/upload` | 上传文件/文本 (支持 .txt, .pdf 等或纯文本) | Volunteer, Expert, Admin |
 
 ### 2.4 智能咨询 (RAG Consultation)
 
 | Method | Endpoint | Description | Roles |
 |---|---|---|---|
-| POST | `/api/consult/chat` | 发送消息并获取 AI 回复 (Stream) | Any |
+| POST | `/api/consult/chat` | 发送消息并获取 AI 回复 (Stream, SSE) | Any |
 | POST | `/api/consult/sessions` | 创建新会话 | Any |
-| GET | `/api/consult/sessions` | 获取历史会话列表 | Any |
+| GET | `/api/consult/sessions` | 获取历史会话列表 (最近 20 条) | Any |
 | GET | `/api/consult/sessions/:id` | 获取会话消息详情 | Any |
 | DELETE | `/api/consult/sessions/:id` | 删除会话 | Any |
 

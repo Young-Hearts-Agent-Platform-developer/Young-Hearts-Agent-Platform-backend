@@ -1,0 +1,67 @@
+import chromadb
+import sys
+
+
+# 连接到 Docker 中的 ChromaDB
+def main():
+    client = chromadb.HttpClient(host="localhost", port=8001)
+
+    # 列出所有集合
+    collections = client.list_collections()
+    print("已存在的集合：")
+
+    if not collections:
+        print("  (当前没有任何集合)")
+
+    for coll in collections:
+        print(f"\n- 集合名称: {coll.name}")
+        
+        # 获取集合对象
+        collection = client.get_collection(name=coll.name)
+        
+        # 获取集合中的文档数量
+        count = collection.count()
+        print(f"  文档数量: {count}")
+        
+        if count > 0:
+            # 查看前几个文档
+            print("  前 3 个文档示例:")
+            results = collection.peek(limit=3)
+
+            # 结果可能包含键 'ids','metadatas','documents'，但它们也可能为 None
+            if results and isinstance(results, dict) and results.get('ids'):
+                ids = results.get('ids') or []
+                metadatas = results.get('metadatas') or []
+                documents = results.get('documents') or []
+
+                for i, doc_id in enumerate(ids):
+                    metadata = metadatas[i] if i < len(metadatas) else None
+                    document = documents[i] if i < len(documents) else None
+
+                    print(f"    - ID: {doc_id}")
+                    if metadata:
+                        print(f"      Metadata: {metadata}")
+                    if document:
+                        doc_preview = document[:100] + "..." if len(document) > 100 else document
+                        print(f"      Document: {doc_preview}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        # 优雅处理中断
+        sys.exit(1)
+    finally:
+        # 如果 posthog 已被初始化，优雅关闭它以避免 atexit 回调中出现 KeyboardInterrupt
+        try:
+            import posthog
+
+            if getattr(posthog, 'default_client', None) is not None:
+                try:
+                    posthog.shutdown()
+                except Exception:
+                    pass
+        except Exception:
+            # 如果没有安装或未初始化 posthog，则忽略
+            pass
