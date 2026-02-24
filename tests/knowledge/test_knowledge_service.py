@@ -22,6 +22,12 @@ def mock_vectorize_task():
 
 
 @pytest.fixture(scope="function")
+def mock_get_chroma_collection():
+    with patch("app.services.knowledge_service.get_chroma_collection") as mock:
+        yield mock
+
+
+@pytest.fixture(scope="function")
 def db_session():
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -142,19 +148,44 @@ def test_update_item_by_unauthorized_user(service, db_session, user_id):
 
 
 # @pytest.mark.skip(reason="该测试已通过")
-def test_delete_item(service, db_session, user_id, user_roles):
+def test_delete_item(service, db_session, user_id, user_roles, mock_get_chroma_collection):
     data = KnowledgeItemCreate(title="删除测试", content="内容")
     item = service.create_item(user_id=user_id, data=data)
+    
+    # 模拟 ChromaDB 集合
+    mock_collection = mock_get_chroma_collection.return_value
+    
+    # 添加一些模拟的切片数据
+    from app.models.knowledge import KnowledgeChunk
+    chunk1 = KnowledgeChunk(item_id=item.id, content_chunk="chunk1", vector_id="vec1")
+    chunk2 = KnowledgeChunk(item_id=item.id, content_chunk="chunk2", vector_id="vec2")
+    db_session.add_all([chunk1, chunk2])
+    db_session.commit()
+    
     service.delete_item(item.id, user_id, user_roles)
+    
+    # 验证 ChromaDB 的 delete 方法被调用
+    mock_get_chroma_collection.assert_called_once()
+    mock_collection.delete.assert_called_once_with(ids=["vec1", "vec2"])
+    
     with pytest.raises(Exception):
         service.get_item(item.id)
 
 
 # @pytest.mark.skip(reason="该测试已通过")
-def test_delete_item_by_expert(service, db_session, user_id, expert_id, expert_roles):
+def test_delete_item_by_expert(service, db_session, user_id, expert_id, expert_roles, mock_get_chroma_collection):
     data = KnowledgeItemCreate(title="删除测试", content="内容")
     item = service.create_item(user_id=user_id, data=data)
+    
+    # 模拟 ChromaDB 集合
+    mock_collection = mock_get_chroma_collection.return_value
+    
     service.delete_item(item.id, expert_id, expert_roles)
+    
+    # 验证 ChromaDB 的 delete 方法被调用（即使没有切片，也会尝试获取集合，但不会调用 delete）
+    mock_get_chroma_collection.assert_not_called()
+    mock_collection.delete.assert_not_called()
+    
     with pytest.raises(HTTPException) as exc_info:
         service.get_item(item.id)
     assert exc_info.value.status_code == 404
@@ -170,7 +201,7 @@ def test_delete_item_by_unauthorized_user(service, db_session, user_id):
 
 
 # @pytest.mark.skip(reason="该测试已通过")
-def test_list_items(service, db_session, user_id, user_roles):
+def test_list_items(service, db_session, user_id, user_roles, mock_get_chroma_collection):
     for i in range(5):
         service.create_item(user_id=user_id, data=KnowledgeItemCreate(title=f"标题{i}", content=f"内容{i}", status="published"))
     for i in range(3):

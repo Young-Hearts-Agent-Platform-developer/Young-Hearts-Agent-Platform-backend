@@ -3,9 +3,11 @@ from sqlalchemy import desc
 from fastapi import HTTPException
 from typing import List, Optional, Any
 from datetime import datetime
-from app.models.knowledge import KnowledgeItem
+from app.models.knowledge import KnowledgeItem, KnowledgeChunk
 from app.schemas.knowledge import KnowledgeItemCreate, KnowledgeItemUpdate, KnowledgeItemAudit
 from app.tasks.knowledge_tasks import extract_knowledge_text, vectorize_knowledge_document
+from app.services.rag.vectorstore.chroma import get_chroma_collection
+from app.core.config import settings
 
 
 class KnowledgeService:
@@ -65,8 +67,25 @@ class KnowledgeService:
 		item = self.get_item(item_id)
 		if getattr(item, "author_id") != user_id and not any(role in user_roles for role in ["admin", "expert"]):
 			raise HTTPException(status_code=403, detail="Permission denied to delete this item")
+		
+		# 软删除 MySQL 中的记录
 		setattr(item, "is_deleted", True)
 		self.db.commit()
+
+		# 同步删除 ChromaDB 中的向量数据
+		try:
+			# 获取该知识库条目对应的所有切片
+			chunks = self.db.query(KnowledgeChunk).filter(KnowledgeChunk.item_id == item_id).all()
+			vector_ids = [chunk.vector_id for chunk in chunks if chunk.vector_id]
+			
+			if vector_ids:
+				vectorstore = get_chroma_collection(settings.CHROMA_COLLECTION_NAME)
+				vectorstore.delete(ids=vector_ids)
+		except Exception as e:
+			# 记录日志，但不阻断主流程
+			import logging
+			logger = logging.getLogger(__name__)
+			logger.error(f"Failed to delete vectors for item {item_id} from ChromaDB: {e}")
 
 	def list_items(self, status: Optional[str] = "published", author_id: Optional[int] = None, skip: int = 0, limit: int = 20) -> tuple[int, List[KnowledgeItem]]:
 		query = self.db.query(KnowledgeItem).filter(KnowledgeItem.is_deleted == False)
