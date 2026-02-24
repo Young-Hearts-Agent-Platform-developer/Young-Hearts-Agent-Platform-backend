@@ -17,10 +17,10 @@ class KnowledgeItem(Base):
     document_type = Column(String(64), comment="文档类型/证据等级")
     target_audience = Column(JSON, comment="适用人群")
     applicable_age = Column(JSON, comment="适用年龄")
-    author_id = Column(BigInteger, ForeignKey("users.id"))
+    author_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"))
     status = Column(String(32), default="draft")  # draft, pending_review, published, rejected, archived
     review_comments = Column(Text)
-    reviewed_by = Column(BigInteger, ForeignKey("users.id"))
+    reviewed_by = Column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
     reviewed_at = Column(DateTime)
     is_deleted = Column(Boolean, default=False, comment="软删除标记")
     created_at = Column(DateTime, server_default=func.now())
