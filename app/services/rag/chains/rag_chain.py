@@ -42,7 +42,7 @@ def get_retriever():
     )
     return retriever
 
-def retrieve_context(query: str, similarity_threshold: float = 0.6, top_k: int = 4) -> Tuple[Optional[str], List[dict]]:
+def retrieve_context(query: str, similarity_threshold: float = 0.2, top_k: int = 4) -> Tuple[Optional[str], List[dict]]:
     """
     检索相关文档片段，并组装上下文。
     如果最高相似度低于阈值，返回 None, []。

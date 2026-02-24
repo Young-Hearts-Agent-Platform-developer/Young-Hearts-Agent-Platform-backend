@@ -27,13 +27,17 @@ def main():
             # 查看前几个文档
             print("  前 3 个文档示例:")
             results = collection.peek(limit=3)
-            
-            if results and 'ids' in results:
-                for i in range(len(results['ids'])):
-                    doc_id = results['ids'][i]
-                    metadata = results['metadatas'][i] if results.get('metadatas') else None
-                    document = results['documents'][i] if results.get('documents') else None
-                    
+
+            # 结果可能包含键 'ids','metadatas','documents'，但它们也可能为 None
+            if results and isinstance(results, dict) and results.get('ids'):
+                ids = results.get('ids') or []
+                metadatas = results.get('metadatas') or []
+                documents = results.get('documents') or []
+
+                for i, doc_id in enumerate(ids):
+                    metadata = metadatas[i] if i < len(metadatas) else None
+                    document = documents[i] if i < len(documents) else None
+
                     print(f"    - ID: {doc_id}")
                     if metadata:
                         print(f"      Metadata: {metadata}")
