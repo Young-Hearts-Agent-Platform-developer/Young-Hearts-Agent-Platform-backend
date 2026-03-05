@@ -10,7 +10,13 @@ class DoubaoEmbeddings(Embeddings):
         self.model = model if model != "" else settings.DOUBAO_EMBEDDING_MODEL
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self._embed(texts)
+        # Batch requests to avoid API limits (DashScope requires batch size <= 10)
+        batch_size = 10
+        all_embeddings = []
+        for i in range(0, len(texts), batch_size):
+            batch_texts = texts[i:i + batch_size]
+            all_embeddings.extend(self._embed(batch_texts))
+        return all_embeddings
 
     def embed_query(self, text: str) -> List[float]:
         return self._embed([text])[0]
@@ -25,6 +31,8 @@ class DoubaoEmbeddings(Embeddings):
             "input": texts
         }
         response = requests.post(url, json=payload, headers=headers)
+        if response.status_code != 200:
+            raise Exception(f"API Error {response.status_code}: {response.text}")
         response.raise_for_status()
         data = response.json()
         return [item["embedding"] for item in data["data"]]
